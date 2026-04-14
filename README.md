@@ -150,6 +150,9 @@ The integration also creates control entities on each mower device page:
 
 You can trigger/test commands directly from those entities in the device page.
 
+## Buy me some new blades!
+Feel free to make a contribution at https://buymeacoffee.com/vincentjanv if this integration helped you in any way...
+
 ## Issues, discussions, ideas..?
 
 If you have any issues with this integration, feel free to open an issue in this repository. For discussions on improving this repository, please join the global Anthbot community on Facebook at https://www.facebook.com/groups/anthbotglobalcommunity of if you're living in the Nordics, at https://www.facebook.com/groups/anthbotnordicscommunity .
