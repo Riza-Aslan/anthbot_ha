@@ -12,7 +12,7 @@ from homeassistant.components.number import (
     NumberMode,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE
+from homeassistant.const import PERCENTAGE, UnitOfTime
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -72,6 +72,21 @@ NUMBERS: tuple[AnthbotNumberDescription, ...] = (
         getter=lambda data: (
             data.get("param_set", {}).get("mow_head")
             if isinstance(data.get("param_set"), dict)
+            else None
+        ),
+    ),
+    AnthbotNumberDescription(
+        key="rain_continue_time_setting",
+        translation_key="rain_continue_time_setting",
+        name="Rain continue time",
+        native_min_value=0,
+        native_max_value=8,
+        native_step=1,
+        native_unit_of_measurement=UnitOfTime.HOURS,
+        mode=NumberMode.SLIDER,
+        getter=lambda data: (
+            data.get("rain_continue_time") / 3600
+            if isinstance(data.get("rain_continue_time"), (int, float))
             else None
         ),
     ),
@@ -153,6 +168,18 @@ class AnthbotNumberEntity(
                 data={
                     "mow_head": int_value,
                     "enable_adaptive_head": 0,
+                },
+            )
+        elif key == "rain_continue_time_setting":
+            if int_value < 0 or int_value > 8:
+                raise ValueError("Rain continue time must be 0..8 hours")
+            rain_switch = self.coordinator.reported_state.get("rain_switch")
+            switch_value = 1 if rain_switch in (1, "1", True, "true", "on") else 0
+            await self.coordinator.client.async_publish_service_command(
+                cmd="ctl_rainer",
+                data={
+                    "switch": switch_value,
+                    "continue_time": int_value * 3600,
                 },
             )
         await self.coordinator.client.async_request_all_properties()

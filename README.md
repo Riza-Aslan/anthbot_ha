@@ -26,36 +26,60 @@ Then it polls the AWS IoT device shadow endpoint per discovered `sn` using autom
 
 - `GET https://<iot_endpoint>/things/<sn>/shadow?name=property`
 
+It also fetches the mower area definition file from Anthbot cloud to discover:
+
+- manual zones
+- auto-zones
+
 From `state.reported` it exposes:
 
 - `sensor.<device>_battery_level` from `elec`
-- `sensor.<device>_cutting_height` from `mow_remote.cutter_height`
+- `sensor.<device>_mower_status` from `robot_sta.value`
+- `sensor.<device>_cutting_height` from `param_set.cutter_height` / `mow_remote.cutter_height`
 - `sensor.<device>_voice_volume` from `volume`
 - `sensor.<device>_mowing_time` from `mowing_time_new.value` (session elapsed time)
-- `sensor.<device>_mow_count` from `param_set.mow_count`
+- `sensor.<device>_mowing_area` from `mowing_area_new.value` (session mowed area)
 - `sensor.<device>_custom_mowing_direction` from `param_set.mow_head`
 - `sensor.<device>_custom_mowing_direction_enabled` from `param_set.enable_adaptive_head` (mapped to enabled/disabled)
+- `sensor.<device>_zones` for discovered manual zones
+- `sensor.<device>_auto_zones` for discovered auto-zones
 - `binary_sensor.<device>_connection` from `online`
 - `binary_sensor.<device>_charging` from `robot_sta.value`
 - `switch.<device>_custom_mowing_direction_enabled` to toggle `param_set.enable_adaptive_head`
+- `switch.<device>_rain_perception_enabled` to toggle `rain_switch`
 
 Entity attributes also include:
 
 - `serial_number`
+- `mower_status`
+- `robot_status_raw`
 - `cutting_height`
 - `mowing_time`
-- `mow_count`
+- `mowing_area`
 - `voice_volume`
 - `custom_mowing_direction`
 - `custom_mowing_direction_enabled`
+- `rain_continue_time`
 - `voice_status`
+
+The dedicated zone sensors also expose:
+
+- manual zone ids, names, and active zone ids
+- auto-zone ids and names
+
+For easier control, the integration also creates per-zone buttons on the mower device:
+
+- `Zone <name>` for each manual zone
+- `Auto zone <name>` for each auto-zone
+
+Each of those button entities exposes the zone-specific metadata as attributes and can be pressed directly from the device page.
 
 ## Setup
 
 ### HACS
 
 1. Open HACS -> Integrations -> top-right menu -> `Custom repositories`.
-2. Add repository URL: `https://github.com/vincentverbist/anthbot_ha`
+2. Add repository URL: `https://github.com/vincentjanv/anthbot_ha`
 3. Category: `Integration`
 4. Install `Anthbot Genie` from HACS and restart Home Assistant.
 5. Add integration: `Settings -> Devices & Services -> Add Integration -> Anthbot Genie`.
@@ -87,17 +111,42 @@ The integration provides these Home Assistant services:
 - `anthbot_genie.set_mow_height` (`mow_height`: 30..70 in 5 mm steps)
 - `anthbot_genie.set_voice_volume` (`voice_volume`: 0..100)
 - `anthbot_genie.set_custom_mowing_direction` (`mow_direction`: 0..180, `enable_custom_direction`: true/false)
+- `anthbot_genie.start_zone_mow` (`zones`: id, name, comma-separated string, or YAML list)
+- `anthbot_genie.start_auto_zone_mow` (`auto_zones`: id, name, comma-separated string, or YAML list)
 
 You can target by Anthbot entities (`target.entity_id`) and/or by `serial_number`.
+
+Examples:
+
+```yaml
+service: anthbot_genie.start_zone_mow
+target:
+  entity_id: sensor.cleaver_zones
+data:
+  zones: [100]
+```
+
+```yaml
+service: anthbot_genie.start_auto_zone_mow
+target:
+  entity_id: sensor.cleaver_auto_zones
+data:
+  auto_zones: "1, Front area"
+```
 
 ## Device page controls
 
 The integration also creates control entities on each mower device page:
 
 - Buttons: `Start full mow`, `Stop mow`, `Return to dock`
+- Buttons: one `Zone <name>` per manual zone
+- Buttons: one `Auto zone <name>` per auto-zone
 - Number controls (sliders): `Mow height`, `Voice volume`
 - Number control (slider): `Custom mowing direction` (0..180)
+- Number control (slider): `Rain continue time` (0..8 hours)
 - Switch: `Custom mowing direction enabled`
+- Switch: `Rain perception`
+- Sensors: `Zones`, `Auto zones` with zone ids/names summaries
 
 You can trigger/test commands directly from those entities in the device page.
 

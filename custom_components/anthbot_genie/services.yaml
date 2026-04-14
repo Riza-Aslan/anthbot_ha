@@ -127,3 +127,45 @@ set_custom_mowing_direction:
       example: "YOUR_MOWER_SERIAL"
       selector:
         text:
+
+start_zone_mow:
+  name: Start Zone Mow
+  description: Start mowing one or more manual zones on selected Anthbot mower(s).
+  target:
+    entity:
+      integration: anthbot_genie
+  fields:
+    zones:
+      name: Zones
+      description: Zone id, zone name, comma-separated list, or YAML list of manual zones.
+      required: true
+      example: "100, Back lawn"
+      selector:
+        text:
+    serial_number:
+      name: Serial number
+      description: Optional mower serial number or list of serial numbers.
+      example: "YOUR_MOWER_SERIAL"
+      selector:
+        text:
+
+start_auto_zone_mow:
+  name: Start Auto-Zone Mow
+  description: Start mowing one or more auto-zones on selected Anthbot mower(s).
+  target:
+    entity:
+      integration: anthbot_genie
+  fields:
+    auto_zones:
+      name: Auto zones
+      description: Auto-zone id, name, comma-separated list, or YAML list of auto-zones.
+      required: true
+      example: "1, Front area"
+      selector:
+        text:
+    serial_number:
+      name: Serial number
+      description: Optional mower serial number or list of serial numbers.
+      example: "YOUR_MOWER_SERIAL"
+      selector:
+        text:

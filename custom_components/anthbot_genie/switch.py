@@ -12,20 +12,26 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from .api import AnthbotGenieApiError
 from .const import DOMAIN
 from .coordinator import AnthbotGenieDataUpdateCoordinator
 
 
+def _coerce_enabled_value(value: object) -> bool:
+    """Map Anthbot integer/bool/string toggles to a Python bool."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return value == 1
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        return lowered in {"1", "true", "on", "enabled", "enable"}
+    return False
+
+
 def _is_custom_direction_enabled(value: object) -> bool:
     """Map raw enable_adaptive_head value to custom-direction toggle state."""
-    adaptive_enabled = False
-    if isinstance(value, bool):
-        adaptive_enabled = value
-    elif isinstance(value, int):
-        adaptive_enabled = value == 1
-    elif isinstance(value, str):
-        adaptive_enabled = value == "1"
-    return not adaptive_enabled
+    return not _coerce_enabled_value(value)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -38,6 +44,11 @@ SWITCHES: tuple[AnthbotSwitchDescription, ...] = (
         key="custom_mowing_direction_enabled",
         translation_key="custom_mowing_direction_enabled",
         name="Custom mowing direction enabled",
+    ),
+    AnthbotSwitchDescription(
+        key="rain_perception_enabled",
+        translation_key="rain_perception_enabled",
+        name="Rain perception",
     ),
 )
 
@@ -86,7 +97,11 @@ class AnthbotSwitchEntity(
     @property
     def is_on(self) -> bool:
         """Return current switch value."""
-        param_set = self.coordinator.reported_state.get("param_set")
+        state = self.coordinator.reported_state
+        if self.entity_description.key == "rain_perception_enabled":
+            return _coerce_enabled_value(state.get("rain_switch"))
+
+        param_set = state.get("param_set")
         if not isinstance(param_set, dict):
             return False
         return _is_custom_direction_enabled(param_set.get("enable_adaptive_head"))
@@ -111,10 +126,42 @@ class AnthbotSwitchEntity(
         await asyncio.sleep(1)
         await self.coordinator.async_request_refresh()
 
+    async def _async_set_rain_perception_enabled(self, enabled: bool) -> None:
+        """Set rain perception toggle."""
+        target_value = 1 if enabled else 0
+        reported_continue_time = self.coordinator.reported_state.get("rain_continue_time")
+        continue_time = (
+            reported_continue_time
+            if isinstance(reported_continue_time, int) and reported_continue_time > 0
+            else 10800
+        )
+
+        await self.coordinator.client.async_publish_service_command(
+            cmd="ctl_rainer",
+            data={
+                "switch": target_value,
+                "continue_time": continue_time,
+            },
+        )
+        await self.coordinator.client.async_request_all_properties()
+        await asyncio.sleep(1)
+        await self.coordinator.async_request_refresh()
+
+        if self.is_on != enabled:
+            raise AnthbotGenieApiError(
+                "Rain perception command was accepted but the reported state did not change"
+            )
+
     async def async_turn_on(self, **kwargs) -> None:
         """Turn switch on."""
+        if self.entity_description.key == "rain_perception_enabled":
+            await self._async_set_rain_perception_enabled(True)
+            return
         await self._async_set_custom_direction_enabled(True)
 
     async def async_turn_off(self, **kwargs) -> None:
         """Turn switch off."""
+        if self.entity_description.key == "rain_perception_enabled":
+            await self._async_set_rain_perception_enabled(False)
+            return
         await self._async_set_custom_direction_enabled(False)

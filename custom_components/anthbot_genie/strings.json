@@ -48,6 +48,12 @@
       },
       "battery_level": {
         "name": "Battery level"
+      },
+      "zones": {
+        "name": "Zones"
+      },
+      "auto_zones": {
+        "name": "Auto zones"
       }
     },
     "binary_sensor": {
@@ -81,11 +87,17 @@
       },
       "custom_mowing_direction_setting": {
         "name": "Custom mowing direction"
+      },
+      "rain_continue_time_setting": {
+        "name": "Rain continue time"
       }
     },
     "switch": {
       "custom_mowing_direction_enabled": {
         "name": "Custom mowing direction enabled"
+      },
+      "rain_perception_enabled": {
+        "name": "Rain perception"
       }
     }
   }

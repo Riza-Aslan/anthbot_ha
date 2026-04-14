@@ -21,6 +21,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import AnthbotGenieDataUpdateCoordinator
+from .zones import active_manual_zone_ids, auto_zones, manual_zones
 
 
 def _is_custom_mowing_direction_enabled(data: dict[str, Any]) -> bool:
@@ -233,6 +234,18 @@ SENSORS: tuple[AnthbotSensorDescription, ...] = (
         ),
     ),
     AnthbotSensorDescription(
+        key="zones",
+        translation_key="zones",
+        name="Zones",
+        value_fn=lambda data: len(manual_zones(data)),
+    ),
+    AnthbotSensorDescription(
+        key="auto_zones",
+        translation_key="auto_zones",
+        name="Auto zones",
+        value_fn=lambda data: len(auto_zones(data)),
+    ),
+    AnthbotSensorDescription(
         key="battery_level",
         translation_key="battery_level",
         name="Battery level",
@@ -334,9 +347,10 @@ class AnthbotSensorEntity(
             if isinstance(state.get("voice_status"), dict)
             else None
         )
+        rain_continue_time = state.get("rain_continue_time")
         mower_status = _general_mower_status(state)
         robot_status_raw = _raw_robot_status(state)
-        return {
+        attributes = {
             "serial_number": self.coordinator.client.serial_number,
             "mower_status": mower_status,
             "robot_status_raw": robot_status_raw,
@@ -347,6 +361,7 @@ class AnthbotSensorEntity(
             "custom_mowing_direction_enabled": custom_mowing_direction_enabled,
             "voice_volume": voice_volume,
             "voice_status": voice_status,
+            "rain_continue_time": rain_continue_time,
             "last_service_command": (
                 service_reported.get("cmd") if service_reported else None
             ),
@@ -354,3 +369,29 @@ class AnthbotSensorEntity(
                 service_reported.get("generation") if service_reported else None
             ),
         }
+        if self.entity_description.key == "zones":
+            manual_zone_list = manual_zones(state)
+            attributes["zone_ids"] = [
+                zone_id
+                for zone in manual_zone_list
+                if isinstance((zone_id := zone.get("id")), int)
+            ]
+            attributes["zone_names"] = [
+                zone_name
+                for zone in manual_zone_list
+                if isinstance((zone_name := zone.get("name")), str) and zone_name
+            ]
+            attributes["active_zone_ids"] = active_manual_zone_ids(state)
+        if self.entity_description.key == "auto_zones":
+            auto_zone_list = auto_zones(state)
+            attributes["auto_zone_ids"] = [
+                zone_id
+                for zone in auto_zone_list
+                if isinstance((zone_id := zone.get("id")), int)
+            ]
+            attributes["auto_zone_names"] = [
+                zone_name
+                for zone in auto_zone_list
+                if isinstance((zone_name := zone.get("name")), str) and zone_name
+            ]
+        return attributes
