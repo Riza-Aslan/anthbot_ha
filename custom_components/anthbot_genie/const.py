@@ -27,12 +27,16 @@ SERVICE_SET_MOW_HEIGHT = "set_mow_height"
 SERVICE_RETURN_TO_DOCK = "return_to_dock"
 SERVICE_SET_VOICE_VOLUME = "set_voice_volume"
 SERVICE_SET_CUSTOM_MOWING_DIRECTION = "set_custom_mowing_direction"
+SERVICE_START_ZONE_MOW = "start_zone_mow"
+SERVICE_START_AUTO_ZONE_MOW = "start_auto_zone_mow"
 
 ATTR_SERIAL_NUMBER = "serial_number"
 ATTR_MOW_HEIGHT = "mow_height"
 ATTR_VOICE_VOLUME = "voice_volume"
 ATTR_MOW_DIRECTION = "mow_direction"
 ATTR_ENABLE_CUSTOM_DIRECTION = "enable_custom_direction"
+ATTR_ZONES = "zones"
+ATTR_AUTO_ZONES = "auto_zones"
 
 # Defaults embedded in Anthbot mobile app auth flow.
 DEFAULT_IOT_REGION = "us-east-1"

@@ -17,11 +17,13 @@ from homeassistant.helpers import entity_registry as er
 
 from .api import AnthbotCloudApiClient, AnthbotGenieApiError, AnthbotShadowApiClient
 from .const import (
+    ATTR_AUTO_ZONES,
     ATTR_ENABLE_CUSTOM_DIRECTION,
     ATTR_MOW_DIRECTION,
     ATTR_MOW_HEIGHT,
     ATTR_SERIAL_NUMBER,
     ATTR_VOICE_VOLUME,
+    ATTR_ZONES,
     CONF_API_HOST,
     CONF_AREA_CODE,
     CONF_BEARER_TOKEN,
@@ -32,13 +34,16 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     SERVICE_RETURN_TO_DOCK,
+    SERVICE_START_AUTO_ZONE_MOW,
     SERVICE_SET_CUSTOM_MOWING_DIRECTION,
     SERVICE_SET_MOW_HEIGHT,
     SERVICE_SET_VOICE_VOLUME,
     SERVICE_START_FULL_MOW,
+    SERVICE_START_ZONE_MOW,
     SERVICE_STOP_MOW,
 )
 from .coordinator import AnthbotGenieDataUpdateCoordinator
+from .zones import auto_zones, manual_zones
 
 PLATFORMS = ["sensor", "binary_sensor", "button", "number", "switch"]
 _LOGGER = logging.getLogger(__name__)
@@ -101,6 +106,92 @@ def _resolve_target_coordinators(
     ]
 
 
+def _normalize_zone_selector(value: object) -> list[str | int]:
+    selectors: list[str | int] = []
+    if isinstance(value, int):
+        return [value]
+    if isinstance(value, str):
+        for item in value.split(","):
+            candidate = item.strip()
+            if not candidate:
+                continue
+            if candidate.isdigit():
+                selectors.append(int(candidate))
+            else:
+                selectors.append(candidate)
+        return selectors
+    if isinstance(value, list):
+        for item in value:
+            selectors.extend(_normalize_zone_selector(item))
+    return selectors
+
+
+def _resolve_manual_zone_ids(
+    coordinator: AnthbotGenieDataUpdateCoordinator, selectors: list[str | int]
+) -> list[int]:
+    zones = manual_zones(coordinator.reported_state)
+    by_id = {
+        zone_id: zone
+        for zone in zones
+        if isinstance((zone_id := zone.get("id")), int)
+    }
+    by_name = {
+        zone_name.casefold(): zone
+        for zone in zones
+        if isinstance((zone_name := zone.get("name")), str) and zone_name
+    }
+
+    resolved: list[int] = []
+    for selector in selectors:
+        zone: dict | None = None
+        if isinstance(selector, int):
+            zone = by_id.get(selector)
+        elif isinstance(selector, str):
+            zone = by_name.get(selector.casefold())
+            if zone is None and selector.isdigit():
+                zone = by_id.get(int(selector))
+        zone_id = zone.get("id") if isinstance(zone, dict) else None
+        if isinstance(zone_id, int) and zone_id not in resolved:
+            resolved.append(zone_id)
+    return resolved
+
+
+def _resolve_auto_zone_points(
+    coordinator: AnthbotGenieDataUpdateCoordinator, selectors: list[str | int]
+) -> list[list[int]]:
+    zones = auto_zones(coordinator.reported_state)
+    by_id = {
+        zone_id: zone
+        for zone in zones
+        if isinstance((zone_id := zone.get("id")), int)
+    }
+    by_name = {
+        zone_name.casefold(): zone
+        for zone in zones
+        if isinstance((zone_name := zone.get("name")), str) and zone_name
+    }
+
+    resolved: list[list[int]] = []
+    for selector in selectors:
+        zone: dict | None = None
+        if isinstance(selector, int):
+            zone = by_id.get(selector)
+        elif isinstance(selector, str):
+            zone = by_name.get(selector.casefold())
+            if zone is None and selector.isdigit():
+                zone = by_id.get(int(selector))
+
+        if not isinstance(zone, dict):
+            continue
+        x = zone.get("x")
+        y = zone.get("y")
+        if isinstance(x, int) and isinstance(y, int):
+            point = [x, y]
+            if point not in resolved:
+                resolved.append(point)
+    return resolved
+
+
 async def _async_register_services(hass: HomeAssistant) -> None:
     async def _async_sync_after_command(
         coordinator: AnthbotGenieDataUpdateCoordinator,
@@ -140,6 +231,26 @@ async def _async_register_services(hass: HomeAssistant) -> None:
                 vol.Coerce(int), vol.Range(min=0, max=180)
             ),
             vol.Optional(ATTR_ENABLE_CUSTOM_DIRECTION, default=True): cv.boolean,
+            vol.Optional(ATTR_SERIAL_NUMBER): vol.Any(cv.string, [cv.string]),
+            vol.Optional("entity_id"): vol.Any(cv.entity_id, [cv.entity_id]),
+        },
+        extra=vol.ALLOW_EXTRA,
+    )
+    zone_schema = vol.Schema(
+        {
+            vol.Required(ATTR_ZONES): vol.Any(
+                vol.Coerce(int), cv.string, [vol.Any(vol.Coerce(int), cv.string)]
+            ),
+            vol.Optional(ATTR_SERIAL_NUMBER): vol.Any(cv.string, [cv.string]),
+            vol.Optional("entity_id"): vol.Any(cv.entity_id, [cv.entity_id]),
+        },
+        extra=vol.ALLOW_EXTRA,
+    )
+    auto_zone_schema = vol.Schema(
+        {
+            vol.Required(ATTR_AUTO_ZONES): vol.Any(
+                vol.Coerce(int), cv.string, [vol.Any(vol.Coerce(int), cv.string)]
+            ),
             vol.Optional(ATTR_SERIAL_NUMBER): vol.Any(cv.string, [cv.string]),
             vol.Optional("entity_id"): vol.Any(cv.entity_id, [cv.entity_id]),
         },
@@ -221,6 +332,40 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             )
             await _async_sync_after_command(coordinator)
 
+    async def _handle_start_zone_mow(service_call) -> None:
+        targets = _resolve_target_coordinators(hass, service_call.data)
+        if not targets:
+            raise AnthbotGenieApiError("No target Anthbot mower found")
+        selectors = _normalize_zone_selector(service_call.data[ATTR_ZONES])
+        for coordinator in targets:
+            zone_ids = _resolve_manual_zone_ids(coordinator, selectors)
+            if not zone_ids:
+                raise AnthbotGenieApiError(
+                    f"No matching zones found for mower {coordinator.client.serial_number}"
+                )
+            await coordinator.client.async_publish_service_command(
+                cmd="custom_area_mow_start",
+                data={"id": zone_ids},
+            )
+            await _async_sync_after_command(coordinator)
+
+    async def _handle_start_auto_zone_mow(service_call) -> None:
+        targets = _resolve_target_coordinators(hass, service_call.data)
+        if not targets:
+            raise AnthbotGenieApiError("No target Anthbot mower found")
+        selectors = _normalize_zone_selector(service_call.data[ATTR_AUTO_ZONES])
+        for coordinator in targets:
+            points = _resolve_auto_zone_points(coordinator, selectors)
+            if not points:
+                raise AnthbotGenieApiError(
+                    f"No matching auto-zones found for mower {coordinator.client.serial_number}"
+                )
+            await coordinator.client.async_publish_service_command(
+                cmd="region_mow_start",
+                data={"points": points},
+            )
+            await _async_sync_after_command(coordinator)
+
     if not hass.services.has_service(DOMAIN, SERVICE_START_FULL_MOW):
         hass.services.async_register(
             DOMAIN,
@@ -259,6 +404,20 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             SERVICE_SET_CUSTOM_MOWING_DIRECTION,
             _handle_set_custom_mowing_direction,
             schema=set_custom_mowing_direction_schema,
+        )
+    if not hass.services.has_service(DOMAIN, SERVICE_START_ZONE_MOW):
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_START_ZONE_MOW,
+            _handle_start_zone_mow,
+            schema=zone_schema,
+        )
+    if not hass.services.has_service(DOMAIN, SERVICE_START_AUTO_ZONE_MOW):
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_START_AUTO_ZONE_MOW,
+            _handle_start_auto_zone_mow,
+            schema=auto_zone_schema,
         )
 
 
@@ -388,6 +547,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _async_cleanup_legacy_entities(hass, entry, device.serial_number)
         coordinator = AnthbotGenieDataUpdateCoordinator(
             hass,
+            account_client=account_client,
             client=shadow_client,
             device=device,
             update_interval=timedelta(
@@ -423,6 +583,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 SERVICE_SET_MOW_HEIGHT,
                 SERVICE_SET_VOICE_VOLUME,
                 SERVICE_SET_CUSTOM_MOWING_DIRECTION,
+                SERVICE_START_ZONE_MOW,
+                SERVICE_START_AUTO_ZONE_MOW,
             ):
                 if hass.services.has_service(DOMAIN, service_name):
                     hass.services.async_remove(DOMAIN, service_name)

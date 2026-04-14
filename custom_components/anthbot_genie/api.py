@@ -48,6 +48,18 @@ class AnthbotBoundDevice:
 
 
 @dataclass(frozen=True, slots=True)
+class AnthbotTemporaryIotCredentials:
+    """Temporary Anthbot-issued AWS IoT credentials."""
+
+    access_key_id: str
+    secret_access_key: str
+    session_token: str
+    region_name: str
+    endpoint: str
+    expiration: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class AnthbotDeviceRegion:
     """Cloud region metadata for a bound mower."""
 
@@ -130,6 +142,16 @@ class AnthbotCloudApiClient:
     def _require_token(self) -> None:
         if not self._bearer_token:
             raise AnthbotGenieApiError("Bearer token not configured")
+
+    @staticmethod
+    def build_verification_token(serial_number: str, timestamp: int | None = None) -> str:
+        """Build the app-style verification token used by device file/STS APIs."""
+        unix_timestamp = timestamp or int(datetime.now(timezone.utc).timestamp())
+        token_suffix = str(unix_timestamp)
+        token_prefix = hashlib.md5(
+            f"{serial_number}{token_suffix}".encode("utf-8")
+        ).hexdigest()
+        return f"{token_prefix}{token_suffix}"
 
     async def async_get_bound_devices(self) -> list[AnthbotBoundDevice]:
         """Fetch account-bound Anthbot devices."""
@@ -233,6 +255,146 @@ class AnthbotCloudApiClient:
             region_name=region_name,
             iot_endpoint=iot_endpoint,
         )
+
+    async def async_get_device_iot_credentials(
+        self, serial_number: str
+    ) -> AnthbotTemporaryIotCredentials:
+        """Fetch temporary AWS IoT credentials for a mower."""
+        self._require_token()
+
+        url = f"https://{self._host}/api/v1/device/v2/iot/sts/arn"
+        payload = {
+            "sn": serial_number,
+            "verification_token": self.build_verification_token(serial_number),
+        }
+        try:
+            async with self._session.post(
+                url,
+                headers={**self._auth_headers, "content-type": "application/json"},
+                json=payload,
+                timeout=15,
+            ) as resp:
+                if resp.status != 200:
+                    body = await resp.text()
+                    raise AnthbotGenieApiError(
+                        f"IoT STS failed ({resp.status}): {body[:300]}"
+                    )
+                response_payload = await resp.json(content_type=None)
+        except ClientError as err:
+            raise AnthbotGenieApiError(f"Network error: {err}") from err
+        except TimeoutError as err:
+            raise AnthbotGenieApiError("Request timed out") from err
+
+        if not isinstance(response_payload, dict):
+            raise AnthbotGenieApiError("Invalid IoT STS payload type")
+        if response_payload.get("code") != 0:
+            raise AnthbotGenieApiError(
+                f"IoT STS returned code={response_payload.get('code')}"
+            )
+
+        data = response_payload.get("data")
+        if not isinstance(data, dict):
+            raise AnthbotGenieApiError("IoT STS payload missing data object")
+
+        access_key_id = data.get("access_key_id")
+        secret_access_key = data.get("secret_access_key")
+        session_token = data.get("session_token")
+        region_name = data.get("region_name")
+        endpoint = data.get("endpoint")
+        if not all(
+            isinstance(value, str) and value
+            for value in (
+                access_key_id,
+                secret_access_key,
+                session_token,
+                region_name,
+                endpoint,
+            )
+        ):
+            raise AnthbotGenieApiError("IoT STS payload missing required fields")
+
+        expiration = data.get("expiration")
+        if not isinstance(expiration, int):
+            expiration = None
+
+        return AnthbotTemporaryIotCredentials(
+            access_key_id=access_key_id,
+            secret_access_key=secret_access_key,
+            session_token=session_token,
+            region_name=region_name,
+            endpoint=endpoint,
+            expiration=expiration,
+        )
+
+    async def async_get_device_area_definition(
+        self, serial_number: str
+    ) -> dict[str, Any]:
+        """Fetch the mower area definition file."""
+        self._require_token()
+
+        url = f"https://{self._host}/api/v1/device/v2/presigned_url"
+        params = {
+            "filename": f"area_{serial_number}.txt",
+            "sn": serial_number,
+            "category": "device",
+            "sub_category": "area",
+            "verification_token": self.build_verification_token(serial_number),
+        }
+
+        try:
+            async with self._session.get(
+                url,
+                headers=self._auth_headers,
+                params=params,
+                timeout=15,
+            ) as resp:
+                if resp.status != 200:
+                    body = await resp.text()
+                    raise AnthbotGenieApiError(
+                        f"Area presigned URL failed ({resp.status}): {body[:300]}"
+                    )
+                payload = await resp.json(content_type=None)
+        except ClientError as err:
+            raise AnthbotGenieApiError(f"Network error: {err}") from err
+        except TimeoutError as err:
+            raise AnthbotGenieApiError("Request timed out") from err
+
+        if not isinstance(payload, dict):
+            raise AnthbotGenieApiError("Invalid area presigned URL payload type")
+        if payload.get("code") != 0:
+            raise AnthbotGenieApiError(
+                f"Area presigned URL returned code={payload.get('code')}"
+            )
+
+        data = payload.get("data")
+        if not isinstance(data, dict):
+            raise AnthbotGenieApiError("Area presigned URL payload missing data object")
+        presigned_url = data.get("presigned_url")
+        if not isinstance(presigned_url, str) or not presigned_url:
+            raise AnthbotGenieApiError("Area presigned URL payload missing presigned_url")
+
+        try:
+            async with self._session.get(presigned_url, timeout=15) as resp:
+                if resp.status != 200:
+                    body = await resp.text()
+                    raise AnthbotGenieApiError(
+                        f"Area definition download failed ({resp.status}): {body[:300]}"
+                    )
+                text = await resp.text()
+        except ClientError as err:
+            raise AnthbotGenieApiError(f"Network error: {err}") from err
+        except TimeoutError as err:
+            raise AnthbotGenieApiError("Request timed out") from err
+
+        try:
+            area_definition = json.loads(text)
+        except json.JSONDecodeError as err:
+            raise AnthbotGenieApiError("Area definition is not valid JSON") from err
+
+        if not isinstance(area_definition, dict):
+            raise AnthbotGenieApiError("Area definition payload type is not an object")
+
+        return area_definition
 
     async def async_get_device_presigned_region(self, serial_number: str) -> str | None:
         """Fetch presigned_url metadata and extract AWS region."""
