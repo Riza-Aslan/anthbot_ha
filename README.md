@@ -79,7 +79,7 @@ Each of those button entities exposes the zone-specific metadata as attributes a
 ### HACS
 
 1. Open HACS -> Integrations -> top-right menu -> `Custom repositories`.
-2. Add repository URL: `https://github.com/vincentjanv/anthbot_ha`
+2. Add repository URL: `https://github.com/vincentjanv/anthbot_genie_ha`
 3. Category: `Integration`
 4. Install `Anthbot Genie` from HACS and restart Home Assistant.
 5. Add integration: `Settings -> Devices & Services -> Add Integration -> Anthbot Genie`.
