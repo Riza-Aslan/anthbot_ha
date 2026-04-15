@@ -76,6 +76,12 @@
       },
       "return_to_dock": {
         "name": "Return to dock"
+      },
+      "zone": {
+        "name": "Zone {zone_name}"
+      },
+      "auto_zone": {
+        "name": "Auto zone {zone_name}"
       }
     },
     "number": {

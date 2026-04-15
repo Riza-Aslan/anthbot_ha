@@ -157,8 +157,8 @@ class AnthbotZoneButtonEntity(
         zone_name = zone.get("name")
         if not isinstance(zone_name, str) or not zone_name.strip():
             zone_name = str(zone_id)
-        prefix = "Zone" if zone_kind == "manual" else "Auto zone"
-        self._attr_name = f"{prefix} {zone_name}"
+        self._attr_translation_key = "zone" if zone_kind == "manual" else "auto_zone"
+        self._attr_translation_placeholders = {"zone_name": zone_name}
         self._attr_unique_id = (
             f"{coordinator.client.serial_number}_{zone_kind}_zone_{zone_id}"
         )

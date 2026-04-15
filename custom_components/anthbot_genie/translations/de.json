@@ -1,0 +1,110 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Anthbot Genie",
+        "description": "Anthbot-Kontoerkennung und Cloud-Shadow-Abfrage konfigurieren.",
+        "data": {
+          "name": "Name",
+          "username": "E-Mail / Benutzername",
+          "password": "Passwort",
+          "api_host": "Anthbot-API-Host",
+          "area_code": "Land",
+          "scan_interval": "Abfrageintervall (Sekunden)"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Dieses Anthbot-Konto ist bereits konfiguriert."
+    },
+    "error": {
+      "cannot_connect": "Verbindung oder Anmeldung an der Anthbot-Cloud fehlgeschlagen.",
+      "no_devices": "Anmeldung erfolgreich, aber in diesem Konto wurden keine Anthbot-Geräte gefunden.",
+      "unknown": "Unerwarteter Fehler."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "mower_status": {
+        "name": "Mäherstatus"
+      },
+      "cutting_height": {
+        "name": "Schnitthöhe"
+      },
+      "voice_volume": {
+        "name": "Lautstärke"
+      },
+      "mowing_time": {
+        "name": "Mähzeit (Sitzung)"
+      },
+      "mowing_area": {
+        "name": "Mähfläche (Sitzung)"
+      },
+      "custom_mowing_direction": {
+        "name": "Benutzerdefinierte Mährichtung"
+      },
+      "custom_mowing_direction_enabled": {
+        "name": "Benutzerdefinierte Mährichtung aktiviert"
+      },
+      "battery_level": {
+        "name": "Akkustand"
+      },
+      "zones": {
+        "name": "Zonen"
+      },
+      "auto_zones": {
+        "name": "Auto-Zonen"
+      }
+    },
+    "binary_sensor": {
+      "connection": {
+        "name": "Verbindung"
+      },
+      "charging": {
+        "name": "Ladevorgang"
+      },
+      "custom_mowing_direction_enabled": {
+        "name": "Benutzerdefinierte Mährichtung aktiviert"
+      }
+    },
+    "button": {
+      "start_full_mow": {
+        "name": "Komplettes Mähen starten"
+      },
+      "stop_mow": {
+        "name": "Mähen stoppen"
+      },
+      "return_to_dock": {
+        "name": "Zur Ladestation zurückkehren"
+      },
+      "zone": {
+        "name": "Zone {zone_name}"
+      },
+      "auto_zone": {
+        "name": "Auto-Zone {zone_name}"
+      }
+    },
+    "number": {
+      "mow_height_setting": {
+        "name": "Schnitthöhe"
+      },
+      "voice_volume_setting": {
+        "name": "Lautstärke"
+      },
+      "custom_mowing_direction_setting": {
+        "name": "Benutzerdefinierte Mährichtung"
+      },
+      "rain_continue_time_setting": {
+        "name": "Regen-Wartezeit"
+      }
+    },
+    "switch": {
+      "custom_mowing_direction_enabled": {
+        "name": "Benutzerdefinierte Mährichtung aktiviert"
+      },
+      "rain_perception_enabled": {
+        "name": "Regenerkennung"
+      }
+    }
+  }
+}
