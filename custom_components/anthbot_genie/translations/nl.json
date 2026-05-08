@@ -86,7 +86,7 @@
     },
     "number": {
       "mow_height_setting": {
-        "name": "Maa hoogte"
+        "name": "Maai hoogte"
       },
       "voice_volume_setting": {
         "name": "Stemvolume"
@@ -96,6 +96,17 @@
       },
       "rain_continue_time_setting": {
         "name": "Regen wachttijd"
+      },
+      "base_station_mow_count_setting": {
+        "name": "Maaibeurten bij laadstation"
+      },
+      "base_station_mow_height_setting": {
+        "name": "Maai hoogte bij laadstation"
+      }
+    },
+    "select": {
+      "base_station_visual_inspection_level": {
+        "name": "Visueel inspectieniveau bij laadstation"
       }
     },
     "switch": {
@@ -104,6 +115,12 @@
       },
       "rain_perception_enabled": {
         "name": "Regendetectie"
+      },
+      "base_station_mowing_enabled": {
+        "name": "Maaien bij laadstation"
+      },
+      "base_station_visual_inspection_enabled": {
+        "name": "Visuele inspectie bij laadstation"
       }
     }
   }

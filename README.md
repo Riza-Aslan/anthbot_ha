@@ -47,6 +47,11 @@ From `state.reported` it exposes:
 - `binary_sensor.<device>_charging` from `robot_sta.value`
 - `switch.<device>_custom_mowing_direction_enabled` to toggle `param_set.enable_adaptive_head`
 - `switch.<device>_rain_perception_enabled` to toggle `rain_switch`
+- `switch.<device>_base_station_mowing_enabled` to toggle Anthbot's nest/base-station mowing mode
+- `switch.<device>_base_station_visual_inspection_enabled` to toggle visual inspection for that mode
+- `number.<device>_base_station_mow_count_setting` for 1x/2x nest mowing passes
+- `number.<device>_base_station_mow_height_setting` for nest mowing height
+- `select.<device>_base_station_visual_inspection_level` for nest visual inspection level (`Low`, `Medium`, `High`)
 
 Entity attributes also include:
 
@@ -59,6 +64,12 @@ Entity attributes also include:
 - `voice_volume`
 - `custom_mowing_direction`
 - `custom_mowing_direction_enabled`
+- `base_station_mowing_enabled`
+- `base_station_mow_count`
+- `base_station_mow_height`
+- `base_station_visual_inspection_enabled`
+- `base_station_visual_inspection_level`
+- `base_station_mowing_active`
 - `rain_continue_time`
 - `voice_status`
 
@@ -144,8 +155,11 @@ The integration also creates control entities on each mower device page:
 - Number controls (sliders): `Mow height`, `Voice volume`
 - Number control (slider): `Custom mowing direction` (0..180)
 - Number control (slider): `Rain continue time` (0..8 hours)
+- Number controls (sliders): `Base station mow count` (1..2), `Base station mow height` (30..70 mm)
+- Select: `Base station visual inspection level` (`Low`, `Medium`, `High`)
 - Switch: `Custom mowing direction enabled`
 - Switch: `Rain perception`
+- Switches: `Base station mowing`, `Base station visual inspection`
 - Sensors: `Zones`, `Auto zones` with zone ids/names summaries
 
 You can trigger/test commands directly from those entities in the device page.

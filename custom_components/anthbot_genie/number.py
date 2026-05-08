@@ -20,6 +20,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import AnthbotGenieDataUpdateCoordinator
+from .mow_params import build_nest_mow_params_payload
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -89,6 +90,27 @@ NUMBERS: tuple[AnthbotNumberDescription, ...] = (
             if isinstance(data.get("rain_continue_time"), (int, float))
             else None
         ),
+    ),
+    AnthbotNumberDescription(
+        key="base_station_mow_count_setting",
+        translation_key="base_station_mow_count_setting",
+        name="Base station mow count",
+        native_min_value=1,
+        native_max_value=2,
+        native_step=1,
+        mode=NumberMode.SLIDER,
+        getter=lambda data: data.get("nest_mow_count"),
+    ),
+    AnthbotNumberDescription(
+        key="base_station_mow_height_setting",
+        translation_key="base_station_mow_height_setting",
+        name="Base station mow height",
+        native_min_value=30,
+        native_max_value=70,
+        native_step=5,
+        native_unit_of_measurement="mm",
+        mode=NumberMode.SLIDER,
+        getter=lambda data: data.get("nest_cutter_height"),
     ),
 )
 
@@ -181,6 +203,26 @@ class AnthbotNumberEntity(
                     "switch": switch_value,
                     "continue_time": int_value * 3600,
                 },
+            )
+        elif key == "base_station_mow_count_setting":
+            if int_value < 1 or int_value > 2:
+                raise ValueError("Base station mow count must be 1 or 2")
+            await self.coordinator.client.async_publish_service_command(
+                cmd="set_mow_params",
+                data=build_nest_mow_params_payload(
+                    self.coordinator.reported_state,
+                    nest_mow_count=int_value,
+                ),
+            )
+        elif key == "base_station_mow_height_setting":
+            if int_value < 30 or int_value > 70 or int_value % 5 != 0:
+                raise ValueError("Base station mow height must be 30..70 in 5 mm steps")
+            await self.coordinator.client.async_publish_service_command(
+                cmd="set_mow_params",
+                data=build_nest_mow_params_payload(
+                    self.coordinator.reported_state,
+                    nest_cutter_height=int_value,
+                ),
             )
         await self.coordinator.client.async_request_all_properties()
         await asyncio.sleep(1)

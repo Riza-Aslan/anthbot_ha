@@ -15,23 +15,13 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .api import AnthbotGenieApiError
 from .const import DOMAIN
 from .coordinator import AnthbotGenieDataUpdateCoordinator
-
-
-def _coerce_enabled_value(value: object) -> bool:
-    """Map Anthbot integer/bool/string toggles to a Python bool."""
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, int):
-        return value == 1
-    if isinstance(value, str):
-        lowered = value.strip().lower()
-        return lowered in {"1", "true", "on", "enabled", "enable"}
-    return False
-
-
-def _is_custom_direction_enabled(value: object) -> bool:
-    """Map raw enable_adaptive_head value to custom-direction toggle state."""
-    return not _coerce_enabled_value(value)
+from .mow_params import (
+    build_nest_mow_params_payload,
+    coerce_enabled_value,
+    custom_direction_enabled_from_state,
+    nest_mowing_enabled_from_state,
+    nest_visual_inspection_enabled_from_state,
+)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -49,6 +39,16 @@ SWITCHES: tuple[AnthbotSwitchDescription, ...] = (
         key="rain_perception_enabled",
         translation_key="rain_perception_enabled",
         name="Rain perception",
+    ),
+    AnthbotSwitchDescription(
+        key="base_station_mowing_enabled",
+        translation_key="base_station_mowing_enabled",
+        name="Base station mowing",
+    ),
+    AnthbotSwitchDescription(
+        key="base_station_visual_inspection_enabled",
+        translation_key="base_station_visual_inspection_enabled",
+        name="Base station visual inspection",
     ),
 )
 
@@ -99,12 +99,12 @@ class AnthbotSwitchEntity(
         """Return current switch value."""
         state = self.coordinator.reported_state
         if self.entity_description.key == "rain_perception_enabled":
-            return _coerce_enabled_value(state.get("rain_switch"))
-
-        param_set = state.get("param_set")
-        if not isinstance(param_set, dict):
-            return False
-        return _is_custom_direction_enabled(param_set.get("enable_adaptive_head"))
+            return coerce_enabled_value(state.get("rain_switch"))
+        if self.entity_description.key == "base_station_mowing_enabled":
+            return nest_mowing_enabled_from_state(state)
+        if self.entity_description.key == "base_station_visual_inspection_enabled":
+            return nest_visual_inspection_enabled_from_state(state)
+        return custom_direction_enabled_from_state(state)
 
     async def _async_set_custom_direction_enabled(self, enabled: bool) -> None:
         """Set custom mowing direction toggle."""
@@ -152,10 +152,44 @@ class AnthbotSwitchEntity(
                 "Rain perception command was accepted but the reported state did not change"
             )
 
+    async def _async_set_base_station_mowing_enabled(self, enabled: bool) -> None:
+        """Set base-station mowing mode."""
+        await self.coordinator.client.async_publish_service_command(
+            cmd="set_mow_params",
+            data=build_nest_mow_params_payload(
+                self.coordinator.reported_state,
+                nest_switch=1 if enabled else 0,
+            ),
+        )
+        await self.coordinator.client.async_request_all_properties()
+        await asyncio.sleep(1)
+        await self.coordinator.async_request_refresh()
+
+    async def _async_set_base_station_visual_inspection_enabled(
+        self, enabled: bool
+    ) -> None:
+        """Set base-station visual inspection toggle."""
+        await self.coordinator.client.async_publish_service_command(
+            cmd="set_mow_params",
+            data=build_nest_mow_params_payload(
+                self.coordinator.reported_state,
+                nest_pobctl_switch=1 if enabled else 0,
+            ),
+        )
+        await self.coordinator.client.async_request_all_properties()
+        await asyncio.sleep(1)
+        await self.coordinator.async_request_refresh()
+
     async def async_turn_on(self, **kwargs) -> None:
         """Turn switch on."""
         if self.entity_description.key == "rain_perception_enabled":
             await self._async_set_rain_perception_enabled(True)
+            return
+        if self.entity_description.key == "base_station_mowing_enabled":
+            await self._async_set_base_station_mowing_enabled(True)
+            return
+        if self.entity_description.key == "base_station_visual_inspection_enabled":
+            await self._async_set_base_station_visual_inspection_enabled(True)
             return
         await self._async_set_custom_direction_enabled(True)
 
@@ -163,5 +197,11 @@ class AnthbotSwitchEntity(
         """Turn switch off."""
         if self.entity_description.key == "rain_perception_enabled":
             await self._async_set_rain_perception_enabled(False)
+            return
+        if self.entity_description.key == "base_station_mowing_enabled":
+            await self._async_set_base_station_mowing_enabled(False)
+            return
+        if self.entity_description.key == "base_station_visual_inspection_enabled":
+            await self._async_set_base_station_visual_inspection_enabled(False)
             return
         await self._async_set_custom_direction_enabled(False)

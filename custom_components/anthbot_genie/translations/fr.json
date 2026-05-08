@@ -96,6 +96,17 @@
       },
       "rain_continue_time_setting": {
         "name": "Temps d'attente pluie"
+      },
+      "base_station_mow_count_setting": {
+        "name": "Passes près de la station"
+      },
+      "base_station_mow_height_setting": {
+        "name": "Hauteur de coupe près de la station"
+      }
+    },
+    "select": {
+      "base_station_visual_inspection_level": {
+        "name": "Niveau d'inspection visuelle près de la station"
       }
     },
     "switch": {
@@ -104,6 +115,12 @@
       },
       "rain_perception_enabled": {
         "name": "Détection de pluie"
+      },
+      "base_station_mowing_enabled": {
+        "name": "Tonte près de la station"
+      },
+      "base_station_visual_inspection_enabled": {
+        "name": "Inspection visuelle près de la station"
       }
     }
   }

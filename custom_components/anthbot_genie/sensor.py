@@ -21,23 +21,19 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import AnthbotGenieDataUpdateCoordinator
+from .mow_params import (
+    custom_direction_enabled_from_state,
+    nest_mowing_enabled_from_state,
+    nest_visual_inspection_enabled_from_state,
+    nest_visual_inspection_option_from_state,
+    raw_int_value,
+)
 from .zones import active_manual_zone_ids, auto_zones, manual_zones
 
 
 def _is_custom_mowing_direction_enabled(data: dict[str, Any]) -> bool:
     """Map raw enable_adaptive_head value to custom-direction state."""
-    param_set = data.get("param_set")
-    if not isinstance(param_set, dict):
-        return False
-    value = param_set.get("enable_adaptive_head")
-    adaptive_enabled = False
-    if isinstance(value, bool):
-        adaptive_enabled = value
-    elif isinstance(value, int):
-        adaptive_enabled = value == 1
-    elif isinstance(value, str):
-        adaptive_enabled = value == "1"
-    return not adaptive_enabled
+    return custom_direction_enabled_from_state(data)
 
 
 _ROBOT_STATUS_BY_CODE: tuple[str, ...] = (
@@ -341,6 +337,15 @@ class AnthbotSensorEntity(
             if isinstance(state.get("param_set"), dict)
             else False
         )
+        base_station_mowing_enabled = nest_mowing_enabled_from_state(state)
+        base_station_mow_count = raw_int_value(state.get("nest_mow_count"))
+        base_station_mow_height = raw_int_value(state.get("nest_cutter_height"))
+        base_station_visual_inspection_enabled = (
+            nest_visual_inspection_enabled_from_state(state)
+        )
+        base_station_visual_inspection_level = (
+            nest_visual_inspection_option_from_state(state)
+        )
         voice_volume = state.get("volume")
         voice_status = (
             state.get("voice_status")
@@ -350,6 +355,7 @@ class AnthbotSensorEntity(
         rain_continue_time = state.get("rain_continue_time")
         mower_status = _general_mower_status(state)
         robot_status_raw = _raw_robot_status(state)
+        base_station_mowing_active = robot_status_raw == "nestmowing"
         attributes = {
             "serial_number": self.coordinator.client.serial_number,
             "mower_status": mower_status,
@@ -359,6 +365,14 @@ class AnthbotSensorEntity(
             "mowing_area": mowing_area,
             "custom_mowing_direction": custom_mowing_direction,
             "custom_mowing_direction_enabled": custom_mowing_direction_enabled,
+            "base_station_mowing_enabled": base_station_mowing_enabled,
+            "base_station_mow_count": base_station_mow_count,
+            "base_station_mow_height": base_station_mow_height,
+            "base_station_visual_inspection_enabled": (
+                base_station_visual_inspection_enabled
+            ),
+            "base_station_visual_inspection_level": base_station_visual_inspection_level,
+            "base_station_mowing_active": base_station_mowing_active,
             "voice_volume": voice_volume,
             "voice_status": voice_status,
             "rain_continue_time": rain_continue_time,

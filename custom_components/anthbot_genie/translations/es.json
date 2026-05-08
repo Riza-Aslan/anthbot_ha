@@ -96,6 +96,17 @@
       },
       "rain_continue_time_setting": {
         "name": "Tiempo de espera por lluvia"
+      },
+      "base_station_mow_count_setting": {
+        "name": "Pasadas junto a la base"
+      },
+      "base_station_mow_height_setting": {
+        "name": "Altura de corte junto a la base"
+      }
+    },
+    "select": {
+      "base_station_visual_inspection_level": {
+        "name": "Nivel de inspección visual junto a la base"
       }
     },
     "switch": {
@@ -104,6 +115,12 @@
       },
       "rain_perception_enabled": {
         "name": "Detección de lluvia"
+      },
+      "base_station_mowing_enabled": {
+        "name": "Corte junto a la base"
+      },
+      "base_station_visual_inspection_enabled": {
+        "name": "Inspección visual junto a la base"
       }
     }
   }
