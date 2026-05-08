@@ -33,6 +33,7 @@ It also fetches the mower area definition file from Anthbot cloud to discover:
 
 From `state.reported` it exposes:
 
+- `lawn_mower.<device>` mapping `robot_sta.value` to the standard Home Assistant `mowing` / `paused` / `docked` / `returning` activities, with `start_mowing`, `pause`, and `dock` actions
 - `sensor.<device>_battery_level` from `elec`
 - `sensor.<device>_mower_status` from `robot_sta.value`
 - `sensor.<device>_cutting_height` from `param_set.cutter_height` / `mow_remote.cutter_height`
@@ -149,6 +150,7 @@ data:
 
 The integration also creates control entities on each mower device page:
 
+- Lawn mower: `lawn_mower.<device>` with the standard `start_mowing`, `pause`, and `dock` actions
 - Buttons: `Start full mow`, `Stop mow`, `Return to dock`
 - Buttons: one `Zone <name>` per manual zone
 - Buttons: one `Auto zone <name>` per auto-zone
@@ -164,7 +166,15 @@ The integration also creates control entities on each mower device page:
 
 You can trigger/test commands directly from those entities in the device page.
 
+## Community contributions
+
+Recent community contributions include:
+
+- Standard Home Assistant `lawn_mower` entity support by Denis Kot / `DenisBY` in PR #12.
+- Polish translations by Tomasz Terlecki / `tazmanska` in PR #9.
+
 ## Buy me some new blades!
+
 Feel free to make a contribution at https://buymeacoffee.com/vincentjanv if this integration helped you in any way...
 
 ## Issues, discussions, ideas..?
