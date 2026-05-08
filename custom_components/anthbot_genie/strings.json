@@ -76,6 +76,12 @@
       },
       "return_to_dock": {
         "name": "Return to dock"
+      },
+      "zone": {
+        "name": "Zone {zone_name}"
+      },
+      "auto_zone": {
+        "name": "Auto zone {zone_name}"
       }
     },
     "number": {
@@ -90,6 +96,17 @@
       },
       "rain_continue_time_setting": {
         "name": "Rain continue time"
+      },
+      "base_station_mow_count_setting": {
+        "name": "Base station mow count"
+      },
+      "base_station_mow_height_setting": {
+        "name": "Base station mow height"
+      }
+    },
+    "select": {
+      "base_station_visual_inspection_level": {
+        "name": "Base station visual inspection level"
       }
     },
     "switch": {
@@ -98,6 +115,12 @@
       },
       "rain_perception_enabled": {
         "name": "Rain perception"
+      },
+      "base_station_mowing_enabled": {
+        "name": "Base station mowing"
+      },
+      "base_station_visual_inspection_enabled": {
+        "name": "Base station visual inspection"
       }
     }
   }

@@ -19,6 +19,13 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import AnthbotGenieDataUpdateCoordinator
+from .mow_params import (
+    custom_direction_enabled_from_state,
+    nest_mowing_enabled_from_state,
+    nest_visual_inspection_enabled_from_state,
+    nest_visual_inspection_option_from_state,
+    raw_int_value,
+)
 
 
 def _is_connected(data: dict[str, Any]) -> bool:
@@ -43,18 +50,7 @@ def _is_charging(data: dict[str, Any]) -> bool:
 
 
 def _is_custom_mowing_direction_enabled(data: dict[str, Any]) -> bool:
-    param_set = data.get("param_set")
-    if not isinstance(param_set, dict):
-        return False
-    value = param_set.get("enable_adaptive_head")
-    adaptive_enabled = False
-    if isinstance(value, bool):
-        adaptive_enabled = value
-    elif isinstance(value, int):
-        adaptive_enabled = value == 1
-    elif isinstance(value, str):
-        adaptive_enabled = value == "1"
-    return not adaptive_enabled
+    return custom_direction_enabled_from_state(data)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -166,6 +162,15 @@ class AnthbotBinarySensorEntity(
             if isinstance(state.get("param_set"), dict)
             else False
         )
+        base_station_mowing_enabled = nest_mowing_enabled_from_state(state)
+        base_station_mow_count = raw_int_value(state.get("nest_mow_count"))
+        base_station_mow_height = raw_int_value(state.get("nest_cutter_height"))
+        base_station_visual_inspection_enabled = (
+            nest_visual_inspection_enabled_from_state(state)
+        )
+        base_station_visual_inspection_level = (
+            nest_visual_inspection_option_from_state(state)
+        )
         voice_volume = state.get("volume")
         voice_status = (
             state.get("voice_status")
@@ -179,6 +184,13 @@ class AnthbotBinarySensorEntity(
             "mowing_area": mowing_area,
             "custom_mowing_direction": custom_mowing_direction,
             "custom_mowing_direction_enabled": custom_mowing_direction_enabled,
+            "base_station_mowing_enabled": base_station_mowing_enabled,
+            "base_station_mow_count": base_station_mow_count,
+            "base_station_mow_height": base_station_mow_height,
+            "base_station_visual_inspection_enabled": (
+                base_station_visual_inspection_enabled
+            ),
+            "base_station_visual_inspection_level": base_station_visual_inspection_level,
             "voice_volume": voice_volume,
             "voice_status": voice_status,
             "last_service_command": (

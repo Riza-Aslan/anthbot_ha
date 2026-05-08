@@ -1,0 +1,127 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Anthbot Genie",
+        "description": "Configurer la découverte du compte Anthbot et l'interrogation du cloud shadow.",
+        "data": {
+          "name": "Nom",
+          "username": "E-mail / nom d'utilisateur",
+          "password": "Mot de passe",
+          "api_host": "Hôte API Anthbot",
+          "area_code": "Pays",
+          "scan_interval": "Intervalle d'interrogation (secondes)"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Ce compte Anthbot est déjà configuré."
+    },
+    "error": {
+      "cannot_connect": "Impossible de se connecter ou de s'authentifier auprès du cloud Anthbot.",
+      "no_devices": "Connexion réussie, mais aucun appareil Anthbot n'a été trouvé dans ce compte.",
+      "unknown": "Erreur inattendue."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "mower_status": {
+        "name": "État de la tondeuse"
+      },
+      "cutting_height": {
+        "name": "Hauteur de coupe"
+      },
+      "voice_volume": {
+        "name": "Volume vocal"
+      },
+      "mowing_time": {
+        "name": "Temps de tonte (session)"
+      },
+      "mowing_area": {
+        "name": "Surface tondue (session)"
+      },
+      "custom_mowing_direction": {
+        "name": "Direction de tonte personnalisée"
+      },
+      "custom_mowing_direction_enabled": {
+        "name": "Direction de tonte personnalisée activée"
+      },
+      "battery_level": {
+        "name": "Niveau de batterie"
+      },
+      "zones": {
+        "name": "Zones"
+      },
+      "auto_zones": {
+        "name": "Zones automatiques"
+      }
+    },
+    "binary_sensor": {
+      "connection": {
+        "name": "Connexion"
+      },
+      "charging": {
+        "name": "Charge"
+      },
+      "custom_mowing_direction_enabled": {
+        "name": "Direction de tonte personnalisée activée"
+      }
+    },
+    "button": {
+      "start_full_mow": {
+        "name": "Démarrer la tonte complète"
+      },
+      "stop_mow": {
+        "name": "Arrêter la tonte"
+      },
+      "return_to_dock": {
+        "name": "Retour à la station"
+      },
+      "zone": {
+        "name": "Zone {zone_name}"
+      },
+      "auto_zone": {
+        "name": "Zone automatique {zone_name}"
+      }
+    },
+    "number": {
+      "mow_height_setting": {
+        "name": "Hauteur de coupe"
+      },
+      "voice_volume_setting": {
+        "name": "Volume vocal"
+      },
+      "custom_mowing_direction_setting": {
+        "name": "Direction de tonte personnalisée"
+      },
+      "rain_continue_time_setting": {
+        "name": "Temps d'attente pluie"
+      },
+      "base_station_mow_count_setting": {
+        "name": "Passes près de la station"
+      },
+      "base_station_mow_height_setting": {
+        "name": "Hauteur de coupe près de la station"
+      }
+    },
+    "select": {
+      "base_station_visual_inspection_level": {
+        "name": "Niveau d'inspection visuelle près de la station"
+      }
+    },
+    "switch": {
+      "custom_mowing_direction_enabled": {
+        "name": "Direction de tonte personnalisée activée"
+      },
+      "rain_perception_enabled": {
+        "name": "Détection de pluie"
+      },
+      "base_station_mowing_enabled": {
+        "name": "Tonte près de la station"
+      },
+      "base_station_visual_inspection_enabled": {
+        "name": "Inspection visuelle près de la station"
+      }
+    }
+  }
+}

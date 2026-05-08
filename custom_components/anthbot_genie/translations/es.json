@@ -1,0 +1,127 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Anthbot Genie",
+        "description": "Configura la detección de cuenta Anthbot y la consulta del cloud shadow.",
+        "data": {
+          "name": "Nombre",
+          "username": "Correo electrónico / nombre de usuario",
+          "password": "Contraseña",
+          "api_host": "Host de la API de Anthbot",
+          "area_code": "País",
+          "scan_interval": "Intervalo de sondeo (segundos)"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Esta cuenta de Anthbot ya está configurada."
+    },
+    "error": {
+      "cannot_connect": "No se pudo conectar o autenticar con la nube de Anthbot.",
+      "no_devices": "El inicio de sesión fue correcto, pero no se encontraron dispositivos Anthbot en esta cuenta.",
+      "unknown": "Error inesperado."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "mower_status": {
+        "name": "Estado del cortacésped"
+      },
+      "cutting_height": {
+        "name": "Altura de corte"
+      },
+      "voice_volume": {
+        "name": "Volumen de voz"
+      },
+      "mowing_time": {
+        "name": "Tiempo de corte (sesión)"
+      },
+      "mowing_area": {
+        "name": "Área cortada (sesión)"
+      },
+      "custom_mowing_direction": {
+        "name": "Dirección de corte personalizada"
+      },
+      "custom_mowing_direction_enabled": {
+        "name": "Dirección de corte personalizada activada"
+      },
+      "battery_level": {
+        "name": "Nivel de batería"
+      },
+      "zones": {
+        "name": "Zonas"
+      },
+      "auto_zones": {
+        "name": "Zonas automáticas"
+      }
+    },
+    "binary_sensor": {
+      "connection": {
+        "name": "Conexión"
+      },
+      "charging": {
+        "name": "Carga"
+      },
+      "custom_mowing_direction_enabled": {
+        "name": "Dirección de corte personalizada activada"
+      }
+    },
+    "button": {
+      "start_full_mow": {
+        "name": "Iniciar corte completo"
+      },
+      "stop_mow": {
+        "name": "Detener corte"
+      },
+      "return_to_dock": {
+        "name": "Volver a la base"
+      },
+      "zone": {
+        "name": "Zona {zone_name}"
+      },
+      "auto_zone": {
+        "name": "Zona automática {zone_name}"
+      }
+    },
+    "number": {
+      "mow_height_setting": {
+        "name": "Altura de corte"
+      },
+      "voice_volume_setting": {
+        "name": "Volumen de voz"
+      },
+      "custom_mowing_direction_setting": {
+        "name": "Dirección de corte personalizada"
+      },
+      "rain_continue_time_setting": {
+        "name": "Tiempo de espera por lluvia"
+      },
+      "base_station_mow_count_setting": {
+        "name": "Pasadas junto a la base"
+      },
+      "base_station_mow_height_setting": {
+        "name": "Altura de corte junto a la base"
+      }
+    },
+    "select": {
+      "base_station_visual_inspection_level": {
+        "name": "Nivel de inspección visual junto a la base"
+      }
+    },
+    "switch": {
+      "custom_mowing_direction_enabled": {
+        "name": "Dirección de corte personalizada activada"
+      },
+      "rain_perception_enabled": {
+        "name": "Detección de lluvia"
+      },
+      "base_station_mowing_enabled": {
+        "name": "Corte junto a la base"
+      },
+      "base_station_visual_inspection_enabled": {
+        "name": "Inspección visual junto a la base"
+      }
+    }
+  }
+}

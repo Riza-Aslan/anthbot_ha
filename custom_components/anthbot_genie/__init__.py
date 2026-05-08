@@ -45,7 +45,15 @@ from .const import (
 from .coordinator import AnthbotGenieDataUpdateCoordinator
 from .zones import auto_zones, manual_zones
 
-PLATFORMS = ["sensor", "binary_sensor", "button", "lawn_mower", "number", "switch"]
+PLATFORMS = [
+    "sensor",
+    "binary_sensor",
+    "button",
+    "lawn_mower",
+    "number",
+    "select",
+    "switch",
+]
 _LOGGER = logging.getLogger(__name__)
 VALID_MOW_HEIGHTS = list(range(30, 75, 5))
 LEGACY_ENTITY_SUFFIXES: tuple[str, ...] = (
@@ -538,11 +546,34 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 err,
             )
 
+        iot_credentials = None
+        try:
+            iot_credentials = await account_client.async_get_device_iot_credentials(
+                device.serial_number
+            )
+            region_name = iot_credentials.region_name
+            iot_endpoint = iot_credentials.endpoint
+            _LOGGER.debug(
+                "Resolved temporary IoT credentials for %s (%s): region=%s endpoint=%s",
+                device.alias,
+                device.serial_number,
+                region_name,
+                iot_endpoint,
+            )
+        except AnthbotGenieApiError as err:
+            _LOGGER.warning(
+                "Failed to fetch temporary IoT credentials for %s (%s), falling back to static signing: %s",
+                device.alias,
+                device.serial_number,
+                err,
+            )
+
         shadow_client = AnthbotShadowApiClient(
             session=session,
             serial_number=device.serial_number,
             region_name=region_name,
             iot_endpoint=iot_endpoint,
+            iot_credentials=iot_credentials,
         )
         _async_cleanup_legacy_entities(hass, entry, device.serial_number)
         coordinator = AnthbotGenieDataUpdateCoordinator(

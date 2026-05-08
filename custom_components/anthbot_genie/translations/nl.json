@@ -1,0 +1,127 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Anthbot Genie",
+        "description": "Anthbot-accountdetectie en cloud shadow polling configureren.",
+        "data": {
+          "name": "Naam",
+          "username": "E-mail / gebruikersnaam",
+          "password": "Wachtwoord",
+          "api_host": "Anthbot API-host",
+          "area_code": "Land",
+          "scan_interval": "Polling-interval (seconden)"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Dit Anthbot-account is al geconfigureerd."
+    },
+    "error": {
+      "cannot_connect": "Kan geen verbinding maken of aanmelden bij de Anthbot-cloud.",
+      "no_devices": "Aanmelden gelukt, maar er zijn geen Anthbot-apparaten gevonden in dit account.",
+      "unknown": "Onverwachte fout."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "mower_status": {
+        "name": "Maaierstatus"
+      },
+      "cutting_height": {
+        "name": "Maai hoogte"
+      },
+      "voice_volume": {
+        "name": "Stemvolume"
+      },
+      "mowing_time": {
+        "name": "Maaiduurtijd (sessie)"
+      },
+      "mowing_area": {
+        "name": "Maaigebied (sessie)"
+      },
+      "custom_mowing_direction": {
+        "name": "Aangepaste maairichting"
+      },
+      "custom_mowing_direction_enabled": {
+        "name": "Aangepaste maairichting ingeschakeld"
+      },
+      "battery_level": {
+        "name": "Batterijniveau"
+      },
+      "zones": {
+        "name": "Zones"
+      },
+      "auto_zones": {
+        "name": "Autozones"
+      }
+    },
+    "binary_sensor": {
+      "connection": {
+        "name": "Verbinding"
+      },
+      "charging": {
+        "name": "Opladen"
+      },
+      "custom_mowing_direction_enabled": {
+        "name": "Aangepaste maairichting ingeschakeld"
+      }
+    },
+    "button": {
+      "start_full_mow": {
+        "name": "Volledig maaien starten"
+      },
+      "stop_mow": {
+        "name": "Maaien stoppen"
+      },
+      "return_to_dock": {
+        "name": "Terug naar laadstation"
+      },
+      "zone": {
+        "name": "Zone {zone_name}"
+      },
+      "auto_zone": {
+        "name": "Autozone {zone_name}"
+      }
+    },
+    "number": {
+      "mow_height_setting": {
+        "name": "Maai hoogte"
+      },
+      "voice_volume_setting": {
+        "name": "Stemvolume"
+      },
+      "custom_mowing_direction_setting": {
+        "name": "Aangepaste maairichting"
+      },
+      "rain_continue_time_setting": {
+        "name": "Regen wachttijd"
+      },
+      "base_station_mow_count_setting": {
+        "name": "Maaibeurten bij laadstation"
+      },
+      "base_station_mow_height_setting": {
+        "name": "Maai hoogte bij laadstation"
+      }
+    },
+    "select": {
+      "base_station_visual_inspection_level": {
+        "name": "Visueel inspectieniveau bij laadstation"
+      }
+    },
+    "switch": {
+      "custom_mowing_direction_enabled": {
+        "name": "Aangepaste maairichting ingeschakeld"
+      },
+      "rain_perception_enabled": {
+        "name": "Regendetectie"
+      },
+      "base_station_mowing_enabled": {
+        "name": "Maaien bij laadstation"
+      },
+      "base_station_visual_inspection_enabled": {
+        "name": "Visuele inspectie bij laadstation"
+      }
+    }
+  }
+}
