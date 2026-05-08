@@ -1,0 +1,110 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Anthbot Genie",
+        "description": "Skonfiguruj Anthbot konto i pobieranie danych.",
+        "data": {
+          "name": "Nazwa",
+          "username": "Email / login",
+          "password": "Hasło",
+          "api_host": "Anthbot API host",
+          "area_code": "Kraj",
+          "scan_interval": "Interwał pobierania danych (sekundy)"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Konto Anthbot jest już skonfigurowane."
+    },
+    "error": {
+      "cannot_connect": "Nie można połączyć się lub zalogować do chmury Anthbot.",
+      "no_devices": "Zalogowano do chmury Anthbot ale nie znaleziono żadnych urządzeń przypisanych do konta.",
+      "unknown": "Nieoczekiwany błąd."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "mower_status": {
+        "name": "Status kosiarki"
+      },
+      "cutting_height": {
+        "name": "Wysokość koszenia"
+      },
+      "voice_volume": {
+        "name": "Głośność komunikatów"
+      },
+      "mowing_time": {
+        "name": "Czas koszenia (sesja)"
+      },
+      "mowing_area": {
+        "name": "Obszar koszenia (sesja)"
+      },
+      "custom_mowing_direction": {
+        "name": "Niestandardowy kierunek koszenia"
+      },
+      "custom_mowing_direction_enabled": {
+        "name": "Status niestandardowego kierunku koszenia"
+      },
+      "battery_level": {
+        "name": "Poziom naładowania baterii"
+      },
+      "zones": {
+        "name": "Strefy"
+      },
+      "auto_zones": {
+        "name": "Strefy automatyczne"
+      }
+    },
+    "binary_sensor": {
+      "connection": {
+        "name": "Połączenie"
+      },
+      "charging": {
+        "name": "Ładowanie"
+      },
+      "custom_mowing_direction_enabled": {
+        "name": "Status niestandardowego kierunku koszenia"
+      }
+    },
+    "button": {
+      "start_full_mow": {
+        "name": "Rozpocznij pełne koszenie"
+      },
+      "stop_mow": {
+        "name": "Zatrzymaj koszenie"
+      },
+      "return_to_dock": {
+        "name": "Powrót do stacji"
+      },
+      "zone": {
+        "name": "Strefa {zone_name}"
+      },
+      "auto_zone": {
+        "name": "Strefa automatyczna {zone_name}"
+      }
+    },
+    "number": {
+      "mow_height_setting": {
+        "name": "Wysokość koszenia"
+      },
+      "voice_volume_setting": {
+        "name": "Głośność komunikatów"
+      },
+      "custom_mowing_direction_setting": {
+        "name": "Niestandardowy kierunek koszenia"
+      },
+      "rain_continue_time_setting": {
+        "name": "Czas opóźnienia po deszczu"
+      }
+    },
+    "switch": {
+      "custom_mowing_direction_enabled": {
+        "name": "Status niestandardowego kierunku koszenia"
+      },
+      "rain_perception_enabled": {
+        "name": "Wykrywanie deszczu"
+      }
+    }
+  }
+}
