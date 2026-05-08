@@ -50,6 +50,7 @@ class AnthbotGenieDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch the latest state from the cloud endpoint."""
         try:
+            await self.client.async_ensure_temporary_credentials(self.account_client)
             property_state = await self.client.async_get_shadow_reported_state()
             try:
                 service_state = await self.client.async_get_service_reported_state()

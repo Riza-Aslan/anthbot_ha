@@ -9,6 +9,7 @@ import hmac
 import json
 import logging
 import re
+import time
 from typing import Any
 import uuid
 from urllib.parse import parse_qs, quote, urlparse
@@ -465,6 +466,7 @@ class AnthbotShadowApiClient:
         serial_number: str,
         region_name: str | None,
         iot_endpoint: str | None,
+        iot_credentials: AnthbotTemporaryIotCredentials | None = None,
     ) -> None:
         self._session = session
         self._serial_number = serial_number
@@ -472,6 +474,10 @@ class AnthbotShadowApiClient:
             region_name if isinstance(region_name, str) and region_name else None
         )
         self._iot_endpoint = self._normalize_endpoint(iot_endpoint)
+        self._temporary_credentials: AnthbotTemporaryIotCredentials | None = None
+        self._temporary_credentials_expires_at = 0.0
+        if iot_credentials is not None:
+            self.set_temporary_credentials(iot_credentials)
         endpoint_region = self._guess_region_from_endpoint(self._iot_endpoint)
         if (
             self._region_name
@@ -485,6 +491,31 @@ class AnthbotShadowApiClient:
                 endpoint_region,
                 self._iot_endpoint,
             )
+
+    def set_temporary_credentials(
+        self, credentials: AnthbotTemporaryIotCredentials
+    ) -> None:
+        """Store Anthbot-issued temporary AWS IoT credentials."""
+        self._temporary_credentials = credentials
+        self._region_name = credentials.region_name
+        self._iot_endpoint = self._normalize_endpoint(credentials.endpoint)
+        expires_in = credentials.expiration if credentials.expiration else 3600
+        self._temporary_credentials_expires_at = time.monotonic() + max(
+            expires_in - 300, 60
+        )
+
+    async def async_ensure_temporary_credentials(
+        self, account_client: AnthbotCloudApiClient
+    ) -> None:
+        """Refresh temporary AWS IoT credentials before they expire."""
+        if (
+            self._temporary_credentials is not None
+            and time.monotonic() < self._temporary_credentials_expires_at
+        ):
+            return
+        self.set_temporary_credentials(
+            await account_client.async_get_device_iot_credentials(self._serial_number)
+        )
 
     @staticmethod
     def _normalize_endpoint(iot_endpoint: str | None) -> str:
@@ -533,6 +564,8 @@ class AnthbotShadowApiClient:
         return IOT_ENDPOINT_TEMPLATE.format(region=region_name)
 
     def _access_key_id(self) -> str:
+        if self._temporary_credentials is not None:
+            return self._temporary_credentials.access_key_id
         if self._iot_endpoint == CN_NORTHWEST_IOT_ENDPOINT:
             return AWS_ACCESS_KEY_CN_NORTHWEST
         if self.signing_region.startswith("cn"):
@@ -540,11 +573,18 @@ class AnthbotShadowApiClient:
         return AWS_ACCESS_KEY_DEFAULT
 
     def _secret_access_key(self) -> str:
+        if self._temporary_credentials is not None:
+            return self._temporary_credentials.secret_access_key
         if self._iot_endpoint == CN_NORTHWEST_IOT_ENDPOINT:
             return AWS_SECRET_KEY_CN_NORTHWEST
         if self.signing_region.startswith("cn"):
             return AWS_SECRET_KEY_CN
         return AWS_SECRET_KEY_DEFAULT
+
+    def _session_token(self) -> str | None:
+        if self._temporary_credentials is not None:
+            return self._temporary_credentials.session_token
+        return None
 
     @staticmethod
     def _sign(key: bytes, msg: str) -> bytes:
@@ -640,6 +680,29 @@ class AnthbotShadowApiClient:
             "x-amz-content-sha256": payload_hash,
             "x-amz-date": amz_date,
         }
+        headers = {
+            "Accept": "*/*",
+            "Host": self._iot_endpoint,
+            "x-amz-date": amz_date,
+            "x-amz-content-sha256": payload_hash,
+        }
+        session_token = self._session_token()
+        if session_token:
+            invocation_id = str(uuid.uuid4())
+            signed_header_values["amz-sdk-invocation-id"] = invocation_id
+            signed_header_values["amz-sdk-request"] = "attempt=1; max=3"
+            signed_header_values["x-amz-security-token"] = session_token
+            signed_header_values["x-amz-user-agent"] = "aws-sdk-js/3.1025.0"
+            headers["amz-sdk-invocation-id"] = invocation_id
+            headers["amz-sdk-request"] = "attempt=1; max=3"
+            headers["x-amz-security-token"] = session_token
+            headers["x-amz-user-agent"] = "aws-sdk-js/3.1025.0"
+            headers["User-Agent"] = (
+                "aws-sdk-js/3.1025.0 ua/2.1 os/other lang/js "
+                "md/rn api/iot-data-plane#3.1025.0 m/N,E"
+            )
+        else:
+            headers["User-Agent"] = "LdMower/1581 CFNetwork/3860.400.51 Darwin/25.3.0"
         canonical_headers, signed_headers = self._canonical_headers(signed_header_values)
         canonical_request = (
             "GET\n"
@@ -656,14 +719,7 @@ class AnthbotShadowApiClient:
         )
 
         url = f"https://{self._iot_endpoint}{request_uri}?{canonical_query}"
-        headers = {
-            "Accept": "*/*",
-            "Host": self._iot_endpoint,
-            "x-amz-date": amz_date,
-            "x-amz-content-sha256": payload_hash,
-            "Authorization": authorization,
-            "User-Agent": "LdMower/1581 CFNetwork/3860.400.51 Darwin/25.3.0",
-        }
+        headers["Authorization"] = authorization
 
         try:
             async with self._session.get(url, headers=headers, timeout=15) as response:
@@ -734,16 +790,21 @@ class AnthbotShadowApiClient:
             invocation_id = str(uuid.uuid4())
             signed_header_values["amz-sdk-invocation-id"] = invocation_id
             signed_header_values["amz-sdk-request"] = "attempt=1; max=3"
-            signed_header_values["x-amz-user-agent"] = "aws-sdk-js/3.846.0"
+            signed_header_values["x-amz-user-agent"] = "aws-sdk-js/3.1025.0"
             headers["amz-sdk-invocation-id"] = invocation_id
             headers["amz-sdk-request"] = "attempt=1; max=3"
-            headers["x-amz-user-agent"] = "aws-sdk-js/3.846.0"
+            headers["x-amz-user-agent"] = "aws-sdk-js/3.1025.0"
             headers["User-Agent"] = (
-                "aws-sdk-js/3.846.0 ua/2.1 os/other lang/js "
-                "md/rn api/iot-data-plane#3.846.0 m/N,E,e"
+                "aws-sdk-js/3.1025.0 ua/2.1 os/other lang/js "
+                "md/rn api/iot-data-plane#3.1025.0 m/N,E"
             )
         else:
             headers["User-Agent"] = "LdMower/1581 CFNetwork/3860.400.51 Darwin/25.3.0"
+
+        session_token = self._session_token()
+        if session_token:
+            signed_header_values["x-amz-security-token"] = session_token
+            headers["x-amz-security-token"] = session_token
 
         canonical_headers, signed_headers = self._canonical_headers(signed_header_values)
         canonical_uri = (
