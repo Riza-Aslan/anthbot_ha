@@ -104,14 +104,14 @@ Each of those button entities exposes the zone-specific metadata as attributes a
 4. In config, enter Anthbot `username`/`password`, select your country (area code dropdown).
 5. The rest (device discovery, region, IoT endpoint, shadow auth signing) is automatic.
 
-## Home Assistant Brands (integration tile icon)
+## Home Assistant Brands
 
-To show the icon/logo in Home Assistant's integration tile, a PR must be submitted to `home-assistant/brands`.
+Starting with Home Assistant 2026.3, custom integrations can ship their own brand images directly. This integration includes local brand assets at:
 
-Prepared assets are included in this repository at:
+- `custom_components/anthbot_genie/brand/icon.png`
+- `custom_components/anthbot_genie/brand/logo.png`
 
-- `brands/custom_integrations/anthbot_genie/icon.png`
-- `brands/custom_integrations/anthbot_genie/logo.png`
+Home Assistant serves these through its local brands API, so no separate `home-assistant/brands` PR is required for HACS/custom installs.
 
 ## Actions (services)
 
