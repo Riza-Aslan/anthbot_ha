@@ -28,6 +28,18 @@ from .mow_params import (
 )
 
 
+def _path_exists(data: dict[str, Any], *keys: str) -> bool:
+    """Check if a nested path exists in the data dictionary."""
+    current = data
+    for key in keys:
+        if not isinstance(current, dict):
+            return False
+        if key not in current:
+            return False
+        current = current[key]
+    return True
+
+
 def _is_connected(data: dict[str, Any]) -> bool:
     online = data.get("online")
     if isinstance(online, bool):
@@ -65,6 +77,60 @@ def _is_custom_mowing_direction_enabled(data: dict[str, Any]) -> bool:
     return custom_direction_enabled_from_state(data)
 
 
+def _is_rain_sensor_active(data: dict[str, Any]) -> bool:
+    """Check if rain sensor is active."""
+    device_config = data.get("device_config")
+    if isinstance(device_config, dict):
+        value = device_config.get("rain_switch")
+        return value in (1, "1", True, "true")
+    return False
+
+
+def _is_camera_active(data: dict[str, Any]) -> bool:
+    """Check if camera is active."""
+    device_config = data.get("device_config")
+    if isinstance(device_config, dict):
+        value = device_config.get("camera_switch")
+        return value in (1, "1", True, "true")
+    return False
+
+
+def _is_anti_theft_active(data: dict[str, Any]) -> bool:
+    """Check if anti-theft protection is active."""
+    device_config = data.get("device_config")
+    if isinstance(device_config, dict):
+        value = device_config.get("anti_loss_switch")
+        return value in (1, "1", True, "true")
+    return False
+
+
+def _is_wifi_connected(data: dict[str, Any]) -> bool:
+    """Check if WiFi is connected."""
+    net_state = data.get("net_state")
+    if isinstance(net_state, dict):
+        value = net_state.get("wifi_state")
+        return value in (1, "1", True, "true")
+    return False
+
+
+def _is_4g_connected(data: dict[str, Any]) -> bool:
+    """Check if 4G is connected."""
+    net_state = data.get("net_state")
+    if isinstance(net_state, dict):
+        value = net_state.get("4g_state")
+        return value in (1, "1", True, "true")
+    return False
+
+
+def _is_adaptive_head_enabled(data: dict[str, Any]) -> bool:
+    """Check if adaptive mowing head is enabled."""
+    param_set = data.get("param_set")
+    if isinstance(param_set, dict):
+        value = param_set.get("enable_adaptive_head")
+        return value in (1, "1", True, "true")
+    return False
+
+
 @dataclass(frozen=True, kw_only=True)
 class AnthbotBinarySensorDescription(BinarySensorEntityDescription):
     """Describes an Anthbot binary sensor entity."""
@@ -87,7 +153,63 @@ BINARY_SENSORS: tuple[AnthbotBinarySensorDescription, ...] = (
         device_class=BinarySensorDeviceClass.BATTERY_CHARGING,
         value_fn=_is_charging,
     ),
+    # M5/M9 specific binary sensors
+    AnthbotBinarySensorDescription(
+        key="rain_sensor",
+        translation_key="rain_sensor",
+        name="Rain sensor",
+        device_class=BinarySensorDeviceClass.MOISTURE,
+        value_fn=_is_rain_sensor_active,
+    ),
+    AnthbotBinarySensorDescription(
+        key="camera",
+        translation_key="camera",
+        name="Camera",
+        device_class=BinarySensorDeviceClass.RUNNING,
+        value_fn=_is_camera_active,
+    ),
+    AnthbotBinarySensorDescription(
+        key="anti_theft",
+        translation_key="anti_theft",
+        name="Anti-theft",
+        device_class=BinarySensorDeviceClass.SAFETY,
+        value_fn=_is_anti_theft_active,
+    ),
+    AnthbotBinarySensorDescription(
+        key="wifi_connected",
+        translation_key="wifi_connected",
+        name="WiFi connected",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        value_fn=_is_wifi_connected,
+    ),
+    AnthbotBinarySensorDescription(
+        key="mobile_connected",
+        translation_key="mobile_connected",
+        name="Mobile connected",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        value_fn=_is_4g_connected,
+    ),
+    AnthbotBinarySensorDescription(
+        key="adaptive_head_enabled",
+        translation_key="adaptive_head_enabled",
+        name="Adaptive head enabled",
+        value_fn=_is_adaptive_head_enabled,
+    ),
 )
+
+
+def _binary_sensor_path_for_description(description: AnthbotBinarySensorDescription) -> list[str] | None:
+    """Return the data path for a binary sensor description, if it has one."""
+    # Map binary sensor keys to their data paths for conditional creation
+    path_map: dict[str, list[str]] = {
+        "rain_sensor": ["device_config", "rain_switch"],
+        "camera": ["device_config", "camera_switch"],
+        "anti_theft": ["device_config", "anti_loss_switch"],
+        "wifi_connected": ["net_state", "wifi_state"],
+        "mobile_connected": ["net_state", "4g_state"],
+        "adaptive_head_enabled": ["param_set", "enable_adaptive_head"],
+    }
+    return path_map.get(description.key)
 
 
 async def async_setup_entry(
@@ -99,11 +221,19 @@ async def async_setup_entry(
     coordinators: list[AnthbotGenieDataUpdateCoordinator] = hass.data[DOMAIN][
         entry.entry_id
     ]
-    async_add_entities(
-        AnthbotBinarySensorEntity(coordinator, description)
-        for coordinator in coordinators
-        for description in BINARY_SENSORS
-    )
+    
+    entities_to_add: list[AnthbotBinarySensorEntity] = []
+    for coordinator in coordinators:
+        state = coordinator.reported_state
+        for description in BINARY_SENSORS:
+            # Check if the data path exists for conditional sensor creation
+            path = _binary_sensor_path_for_description(description)
+            if path is not None:
+                if not _path_exists(state, *path):
+                    continue
+            entities_to_add.append(AnthbotBinarySensorEntity(coordinator, description))
+    
+    async_add_entities(entities_to_add)
 
 
 class AnthbotBinarySensorEntity(

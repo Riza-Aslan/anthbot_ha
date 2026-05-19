@@ -81,6 +81,24 @@
       },
       "auto_zones": {
         "name": "Auto zones"
+      },
+      "volume": {
+        "name": "Volume"
+      },
+      "sim_id": {
+        "name": "SIM ID"
+      },
+      "ota_status": {
+        "name": "OTA status"
+      },
+      "ota_progress": {
+        "name": "OTA progress"
+      },
+      "firmware_version": {
+        "name": "Firmware version"
+      },
+      "mow_count": {
+        "name": "Mow count"
       }
     },
     "binary_sensor": {
@@ -92,6 +110,24 @@
       },
       "custom_mowing_direction_enabled": {
         "name": "Custom mowing direction enabled"
+      },
+      "rain_sensor": {
+        "name": "Rain sensor"
+      },
+      "camera": {
+        "name": "Camera"
+      },
+      "anti_theft": {
+        "name": "Anti-theft"
+      },
+      "wifi_connected": {
+        "name": "WiFi connected"
+      },
+      "mobile_connected": {
+        "name": "Mobile connected"
+      },
+      "adaptive_head_enabled": {
+        "name": "Adaptive head enabled"
       }
     },
     "button": {

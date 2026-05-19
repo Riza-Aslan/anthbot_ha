@@ -31,6 +31,18 @@ from .mow_params import (
 from .zones import active_manual_zone_ids, auto_zones, manual_zones
 
 
+def _path_exists(data: dict[str, Any], *keys: str) -> bool:
+    """Check if a nested path exists in the data dictionary."""
+    current = data
+    for key in keys:
+        if not isinstance(current, dict):
+            return False
+        if key not in current:
+            return False
+        current = current[key]
+    return True
+
+
 def _is_custom_mowing_direction_enabled(data: dict[str, Any]) -> bool:
     """Map raw enable_adaptive_head value to custom-direction state."""
     return custom_direction_enabled_from_state(data)
@@ -340,11 +352,9 @@ SENSORS: tuple[AnthbotSensorDescription, ...] = (
         key="rtk_state",
         translation_key="rtk_state",
         name="RTK state",
-        device_class=SensorDeviceClass.ENUM,
-        options=["no_fix", "single_fix", "float_fix", "fixed", "unknown"],
         value_fn=lambda data: (
-            data.get("rtk", {}).get("state")
-            if isinstance(data.get("rtk"), dict)
+            str(data.get("rtk", {}).get("state"))
+            if isinstance(data.get("rtk"), dict) and data.get("rtk", {}).get("state") is not None
             else None
         ),
     ),
@@ -366,12 +376,101 @@ SENSORS: tuple[AnthbotSensorDescription, ...] = (
         translation_key="mapping_task_state",
         name="Mapping task state",
         value_fn=lambda data: (
-            data.get("mapping_task", {}).get("state")
-            if isinstance(data.get("mapping_task"), dict)
+            str(data.get("mapping_task", {}).get("state"))
+            if isinstance(data.get("mapping_task"), dict) and data.get("mapping_task", {}).get("state") is not None
+            else None
+        ),
+    ),
+    # Additional M5/M9 sensors
+    AnthbotSensorDescription(
+        key="volume",
+        translation_key="volume",
+        name="Volume",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: (
+            data.get("device_config", {}).get("volume")
+            if isinstance(data.get("device_config"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="sim_id",
+        translation_key="sim_id",
+        name="SIM ID",
+        value_fn=lambda data: (
+            data.get("net_config", {}).get("4g_ccid")
+            if isinstance(data.get("net_config"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="ota_status",
+        translation_key="ota_status",
+        name="OTA status",
+        value_fn=lambda data: (
+            data.get("ota_status", {}).get("states")
+            if isinstance(data.get("ota_status"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="ota_progress",
+        translation_key="ota_progress",
+        name="OTA progress",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: (
+            data.get("ota_status", {}).get("progress")
+            if isinstance(data.get("ota_status"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="firmware_version",
+        translation_key="firmware_version",
+        name="Firmware version",
+        value_fn=lambda data: (
+            data.get("fw_version", {}).get("system_version")
+            if isinstance(data.get("fw_version"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="mow_count",
+        translation_key="mow_count",
+        name="Mow count",
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: (
+            data.get("param_set", {}).get("mow_count")
+            if isinstance(data.get("param_set"), dict)
             else None
         ),
     ),
 )
+
+
+def _sensor_path_for_description(description: AnthbotSensorDescription) -> list[str] | None:
+    """Return the data path for a sensor description, if it has one."""
+    # Map sensor keys to their data paths for conditional creation
+    path_map: dict[str, list[str]] = {
+        "volume": ["device_config", "volume"],
+        "sim_id": ["net_config", "4g_ccid"],
+        "ota_status": ["ota_status", "states"],
+        "ota_progress": ["ota_status", "progress"],
+        "firmware_version": ["fw_version", "system_version"],
+        "mow_count": ["param_set", "mow_count"],
+        "mode": ["mode", "value"],
+        "error_code": ["error", "value"],
+        "ip_address": ["net_config", "ip"],
+        "wifi_ssid": ["net_config", "ssid"],
+        "mowing_area_total": ["mowing_area", "value"],
+        "mowing_time_total": ["mowing_time", "value"],
+        "rtk_state": ["rtk", "state"],
+        "map_area": ["map", "map_area"],
+        "mapping_task_state": ["mapping_task", "state"],
+    }
+    return path_map.get(description.key)
 
 
 async def async_setup_entry(
@@ -383,11 +482,19 @@ async def async_setup_entry(
     coordinators: list[AnthbotGenieDataUpdateCoordinator] = hass.data[DOMAIN][
         entry.entry_id
     ]
-    async_add_entities(
-        AnthbotSensorEntity(coordinator, description)
-        for coordinator in coordinators
-        for description in SENSORS
-    )
+    
+    entities_to_add: list[AnthbotSensorEntity] = []
+    for coordinator in coordinators:
+        state = coordinator.reported_state
+        for description in SENSORS:
+            # Check if the data path exists for conditional sensor creation
+            path = _sensor_path_for_description(description)
+            if path is not None:
+                if not _path_exists(state, *path):
+                    continue
+            entities_to_add.append(AnthbotSensorEntity(coordinator, description))
+    
+    async_add_entities(entities_to_add)
 
 
 class AnthbotSensorEntity(

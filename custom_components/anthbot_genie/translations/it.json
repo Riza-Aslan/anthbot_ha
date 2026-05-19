@@ -81,6 +81,24 @@
       },
       "auto_zones": {
         "name": "Zone automatiche"
+      },
+      "volume": {
+        "name": "Volume"
+      },
+      "sim_id": {
+        "name": "ID SIM"
+      },
+      "ota_status": {
+        "name": "Stato OTA"
+      },
+      "ota_progress": {
+        "name": "Avanzamento OTA"
+      },
+      "firmware_version": {
+        "name": "Versione firmware"
+      },
+      "mow_count": {
+        "name": "Contatore taglio"
       }
     },
     "binary_sensor": {
@@ -92,6 +110,24 @@
       },
       "custom_mowing_direction_enabled": {
         "name": "Direzione di taglio personalizzata attiva"
+      },
+      "rain_sensor": {
+        "name": "Sensore pioggia"
+      },
+      "camera": {
+        "name": "Fotocamera"
+      },
+      "anti_theft": {
+        "name": "Antifurto"
+      },
+      "wifi_connected": {
+        "name": "WiFi connesso"
+      },
+      "mobile_connected": {
+        "name": "Connessione mobile"
+      },
+      "adaptive_head_enabled": {
+        "name": "Testa adattativa attiva"
       }
     },
     "button": {
