@@ -864,16 +864,15 @@ class AnthbotShadowApiClient:
         body = {"state": {"desired": {"cmd": cmd, "data": data}}}
         payload_bytes = json.dumps(body, separators=(",", ":")).encode("utf-8")
         
-        # Determine topic based on device model
-        # M5/M9 devices may require a different topic structure
-        is_m_series = self._device_model and "M5" in str(self._device_model).upper() or "M9" in str(self._device_model).upper()
+        # M5/M9 devices require writing to the "property" named shadow
+        # Genie 600 uses "service" named shadow
+        is_m_series = self._device_model and ("M5" in str(self._device_model).upper() or "M9" in str(self._device_model).upper())
         
         if is_m_series:
-            # M5/M9 devices may use a different topic structure
-            # Try the standard topic first, but log for debugging
-            topic = f"$aws/things/{self._serial_number}/shadow/name/service/update"
+            # M5/M9 devices use the "property" named shadow
+            topic = f"$aws/things/{self._serial_number}/shadow/name/property/update"
         else:
-            # Genie 600 devices use the standard topic
+            # Genie 600 devices use the "service" named shadow
             topic = f"$aws/things/{self._serial_number}/shadow/name/service/update"
         
         # Log the exact topic and payload for debugging
