@@ -343,8 +343,8 @@ SENSORS: tuple[AnthbotSensorDescription, ...] = (
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda data: (
-            data.get("mowing_time", {}).get("value")
-            if isinstance(data.get("mowing_time"), dict)
+            int(data.get("mowing_time", {}).get("value") / 60)
+            if isinstance(data.get("mowing_time"), dict) and data.get("mowing_time", {}).get("value") is not None
             else None
         ),
     ),
