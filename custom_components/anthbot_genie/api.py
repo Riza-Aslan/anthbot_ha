@@ -868,7 +868,9 @@ class AnthbotShadowApiClient:
         """Publish a service command to the mower service shadow topic."""
         # volume_ctl uses a different payload structure
         if cmd == "volume_ctl":
-            body = {"state": {"desired": {"volume_ctl": int(data)}}}
+            # Extract volume value from dict if needed
+            volume_value = data.get("volume") if isinstance(data, dict) else data
+            body = {"state": {"desired": {"volume_ctl": int(volume_value)}}}
         else:
             body = {"state": {"desired": {"cmd": cmd, "data": data}}}
         payload_bytes = json.dumps(body, separators=(",", ":")).encode("utf-8")
