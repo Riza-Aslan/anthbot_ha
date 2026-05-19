@@ -752,6 +752,11 @@ class AnthbotShadowApiClient:
 
     async def async_get_service_reported_state(self) -> dict[str, Any]:
         """Fetch service shadow and return state.reported."""
+        # M5/M9 devices use the property shadow instead of service shadow
+        # since they don't have access to the service named shadow
+        is_m_series = self._device_model and ("M5" in str(self._device_model).upper() or "M9" in str(self._device_model).upper())
+        if is_m_series:
+            return await self._async_get_named_shadow_reported_state("property")
         return await self._async_get_named_shadow_reported_state("service")
 
     async def _async_signed_post(
@@ -864,27 +869,17 @@ class AnthbotShadowApiClient:
         body = {"state": {"desired": {"cmd": cmd, "data": data}}}
         payload_bytes = json.dumps(body, separators=(",", ":")).encode("utf-8")
         
-        # M5/M9 devices require writing to the "property" named shadow
-        # Genie 600 uses "service" named shadow
-        is_m_series = self._device_model and ("M5" in str(self._device_model).upper() or "M9" in str(self._device_model).upper())
-        
-        if is_m_series:
-            # M5/M9 devices use the "property" named shadow
-            topic = f"$aws/things/{self._serial_number}/shadow/name/property/update"
+        # Determine shadow name based on command type
+        # param_set and get_all_props use the "property" named shadow
+        # volume_ctl and other commands use the "service" named shadow
+        property_commands = {"param_set", "get_all_props"}
+        if cmd in property_commands:
+            shadow_name = "property"
         else:
-            # Genie 600 devices use the "service" named shadow
-            topic = f"$aws/things/{self._serial_number}/shadow/name/service/update"
+            shadow_name = "service"
         
-        # Log the exact topic and payload for debugging
-        _LOGGER.warning(
-            "Anthbot command publish: cmd=%s sn=%s model=%s topic=%s payload=%s endpoint=%s",
-            cmd,
-            self._serial_number,
-            self._device_model,
-            topic,
-            body,
-            self._iot_endpoint,
-        )
+        topic = f"$aws/things/{self._serial_number}/shadow/name/{shadow_name}/update"
+        
         request_uri_encoded = "/topics/" + quote(topic, safe="-_.~")
         request_uri_raw = f"/topics/{topic}"
 
