@@ -866,13 +866,17 @@ class AnthbotShadowApiClient:
 
     async def async_publish_service_command(self, *, cmd: str, data: Any) -> None:
         """Publish a service command to the mower service shadow topic."""
-        body = {"state": {"desired": {"cmd": cmd, "data": data}}}
+        # volume_ctl uses a different payload structure
+        if cmd == "volume_ctl":
+            body = {"state": {"desired": {"volume_ctl": int(data)}}}
+        else:
+            body = {"state": {"desired": {"cmd": cmd, "data": data}}}
         payload_bytes = json.dumps(body, separators=(",", ":")).encode("utf-8")
         
         # Determine shadow name based on command type
-        # param_set and get_all_props use the "property" named shadow
-        # volume_ctl and other commands use the "service" named shadow
-        property_commands = {"param_set", "get_all_props"}
+        # param_set, get_all_props, and volume_ctl use the "property" named shadow
+        # other commands use the "service" named shadow
+        property_commands = {"param_set", "get_all_props", "volume_ctl"}
         if cmd in property_commands:
             shadow_name = "property"
         else:
