@@ -467,9 +467,11 @@ class AnthbotShadowApiClient:
         region_name: str | None,
         iot_endpoint: str | None,
         iot_credentials: AnthbotTemporaryIotCredentials | None = None,
+        device_model: str | None = None,
     ) -> None:
         self._session = session
         self._serial_number = serial_number
+        self._device_model = device_model
         self._region_name = (
             region_name if isinstance(region_name, str) and region_name else None
         )
@@ -861,7 +863,29 @@ class AnthbotShadowApiClient:
         """Publish a service command to the mower service shadow topic."""
         body = {"state": {"desired": {"cmd": cmd, "data": data}}}
         payload_bytes = json.dumps(body, separators=(",", ":")).encode("utf-8")
-        topic = f"$aws/things/{self._serial_number}/shadow/name/service/update"
+        
+        # Determine topic based on device model
+        # M5/M9 devices may require a different topic structure
+        is_m_series = self._device_model and "M5" in str(self._device_model).upper() or "M9" in str(self._device_model).upper()
+        
+        if is_m_series:
+            # M5/M9 devices may use a different topic structure
+            # Try the standard topic first, but log for debugging
+            topic = f"$aws/things/{self._serial_number}/shadow/name/service/update"
+        else:
+            # Genie 600 devices use the standard topic
+            topic = f"$aws/things/{self._serial_number}/shadow/name/service/update"
+        
+        # Log the exact topic and payload for debugging
+        _LOGGER.warning(
+            "Anthbot command publish: cmd=%s sn=%s model=%s topic=%s payload=%s endpoint=%s",
+            cmd,
+            self._serial_number,
+            self._device_model,
+            topic,
+            body,
+            self._iot_endpoint,
+        )
         request_uri_encoded = "/topics/" + quote(topic, safe="-_.~")
         request_uri_raw = f"/topics/{topic}"
 
