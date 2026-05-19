@@ -248,7 +248,113 @@ SENSORS: tuple[AnthbotSensorDescription, ...] = (
         native_unit_of_measurement=PERCENTAGE,
         device_class=SensorDeviceClass.BATTERY,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: data.get("elec"),
+        value_fn=lambda data: (
+            data.get("elec", {}).get("value")
+            if isinstance(data.get("elec"), dict)
+            else data.get("elec")
+        ),
+    ),
+    # M5-specific sensors with safe fallback for Genie 600 compatibility
+    AnthbotSensorDescription(
+        key="mode",
+        translation_key="mode",
+        name="Mode",
+        value_fn=lambda data: (
+            data.get("mode", {}).get("value")
+            if isinstance(data.get("mode"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="error_code",
+        translation_key="error_code",
+        name="Error code",
+        value_fn=lambda data: (
+            data.get("error", {}).get("value")
+            if isinstance(data.get("error"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="ip_address",
+        translation_key="ip_address",
+        name="IP address",
+        value_fn=lambda data: (
+            data.get("net_config", {}).get("ip")
+            if isinstance(data.get("net_config"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="wifi_ssid",
+        translation_key="wifi_ssid",
+        name="WiFi SSID",
+        value_fn=lambda data: (
+            data.get("net_config", {}).get("ssid")
+            if isinstance(data.get("net_config"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="mowing_area_total",
+        translation_key="mowing_area_total",
+        name="Mowing area (total)",
+        native_unit_of_measurement=UnitOfArea.SQUARE_METERS,
+        device_class=SensorDeviceClass.AREA,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: (
+            data.get("mowing_area", {}).get("value")
+            if isinstance(data.get("mowing_area"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="mowing_time_total",
+        translation_key="mowing_time_total",
+        name="Mowing time (total)",
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: (
+            data.get("mowing_time", {}).get("value")
+            if isinstance(data.get("mowing_time"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="rtk_state",
+        translation_key="rtk_state",
+        name="RTK state",
+        device_class=SensorDeviceClass.ENUM,
+        options=["no_fix", "single_fix", "float_fix", "fixed", "unknown"],
+        value_fn=lambda data: (
+            data.get("rtk", {}).get("state")
+            if isinstance(data.get("rtk"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="map_area",
+        translation_key="map_area",
+        name="Map area",
+        native_unit_of_measurement=UnitOfArea.SQUARE_METERS,
+        device_class=SensorDeviceClass.AREA,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: (
+            data.get("map", {}).get("map_area")
+            if isinstance(data.get("map"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="mapping_task_state",
+        translation_key="mapping_task_state",
+        name="Mapping task state",
+        value_fn=lambda data: (
+            data.get("mapping_task", {}).get("state")
+            if isinstance(data.get("mapping_task"), dict)
+            else None
+        ),
     ),
 )
 
@@ -381,6 +487,42 @@ class AnthbotSensorEntity(
             ),
             "last_service_command_generation": (
                 service_reported.get("generation") if service_reported else None
+            ),
+            # M5-specific attributes
+            "mode": (
+                state.get("mode", {}).get("value")
+                if isinstance(state.get("mode"), dict)
+                else None
+            ),
+            "error_code": (
+                state.get("error", {}).get("value")
+                if isinstance(state.get("error"), dict)
+                else None
+            ),
+            "ip_address": (
+                state.get("net_config", {}).get("ip")
+                if isinstance(state.get("net_config"), dict)
+                else None
+            ),
+            "wifi_ssid": (
+                state.get("net_config", {}).get("ssid")
+                if isinstance(state.get("net_config"), dict)
+                else None
+            ),
+            "rtk_state": (
+                state.get("rtk", {}).get("state")
+                if isinstance(state.get("rtk"), dict)
+                else None
+            ),
+            "map_area": (
+                state.get("map", {}).get("map_area")
+                if isinstance(state.get("map"), dict)
+                else None
+            ),
+            "mapping_task_state": (
+                state.get("mapping_task", {}).get("state")
+                if isinstance(state.get("mapping_task"), dict)
+                else None
             ),
         }
         if self.entity_description.key == "zones":

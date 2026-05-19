@@ -49,6 +49,33 @@
       "battery_level": {
         "name": "Batterijniveau"
       },
+      "mode": {
+        "name": "Modus"
+      },
+      "error_code": {
+        "name": "Foutcode"
+      },
+      "ip_address": {
+        "name": "IP-adres"
+      },
+      "wifi_ssid": {
+        "name": "WiFi SSID"
+      },
+      "mowing_area_total": {
+        "name": "Maaigebied (totaal)"
+      },
+      "mowing_time_total": {
+        "name": "Maaiduurtijd (totaal)"
+      },
+      "rtk_state": {
+        "name": "RTK-status"
+      },
+      "map_area": {
+        "name": "Kaartgebied"
+      },
+      "mapping_task_state": {
+        "name": "Kaarttaakstatus"
+      },
       "zones": {
         "name": "Zones"
       },

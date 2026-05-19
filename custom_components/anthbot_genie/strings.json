@@ -49,6 +49,33 @@
       "battery_level": {
         "name": "Battery level"
       },
+      "mode": {
+        "name": "Mode"
+      },
+      "error_code": {
+        "name": "Error code"
+      },
+      "ip_address": {
+        "name": "IP address"
+      },
+      "wifi_ssid": {
+        "name": "WiFi SSID"
+      },
+      "mowing_area_total": {
+        "name": "Mowing area (total)"
+      },
+      "mowing_time_total": {
+        "name": "Mowing time (total)"
+      },
+      "rtk_state": {
+        "name": "RTK state"
+      },
+      "map_area": {
+        "name": "Map area"
+      },
+      "mapping_task_state": {
+        "name": "Mapping task state"
+      },
       "zones": {
         "name": "Zones"
       },

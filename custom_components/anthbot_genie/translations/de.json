@@ -49,6 +49,33 @@
       "battery_level": {
         "name": "Akkustand"
       },
+      "mode": {
+        "name": "Modus"
+      },
+      "error_code": {
+        "name": "Fehlercode"
+      },
+      "ip_address": {
+        "name": "IP-Adresse"
+      },
+      "wifi_ssid": {
+        "name": "WLAN-SSID"
+      },
+      "mowing_area_total": {
+        "name": "Mähfläche (Gesamt)"
+      },
+      "mowing_time_total": {
+        "name": "Mähzeit (Gesamt)"
+      },
+      "rtk_state": {
+        "name": "RTK-Status"
+      },
+      "map_area": {
+        "name": "Kartenfläche"
+      },
+      "mapping_task_state": {
+        "name": "Kartierungsstatus"
+      },
       "zones": {
         "name": "Zonen"
       },

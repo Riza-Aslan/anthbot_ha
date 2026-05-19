@@ -49,6 +49,33 @@
       "battery_level": {
         "name": "Niveau de batterie"
       },
+      "mode": {
+        "name": "Mode"
+      },
+      "error_code": {
+        "name": "Code d'erreur"
+      },
+      "ip_address": {
+        "name": "Adresse IP"
+      },
+      "wifi_ssid": {
+        "name": "SSID WiFi"
+      },
+      "mowing_area_total": {
+        "name": "Surface tondue (total)"
+      },
+      "mowing_time_total": {
+        "name": "Temps de tonte (total)"
+      },
+      "rtk_state": {
+        "name": "État RTK"
+      },
+      "map_area": {
+        "name": "Surface de la carte"
+      },
+      "mapping_task_state": {
+        "name": "État de cartographie"
+      },
       "zones": {
         "name": "Zones"
       },

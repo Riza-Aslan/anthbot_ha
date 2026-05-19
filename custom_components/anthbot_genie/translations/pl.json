@@ -49,6 +49,33 @@
       "battery_level": {
         "name": "Poziom naładowania baterii"
       },
+      "mode": {
+        "name": "Tryb"
+      },
+      "error_code": {
+        "name": "Kod błędu"
+      },
+      "ip_address": {
+        "name": "Adres IP"
+      },
+      "wifi_ssid": {
+        "name": "WiFi SSID"
+      },
+      "mowing_area_total": {
+        "name": "Obszar koszenia (całkowity)"
+      },
+      "mowing_time_total": {
+        "name": "Czas koszenia (całkowity)"
+      },
+      "rtk_state": {
+        "name": "Stan RTK"
+      },
+      "map_area": {
+        "name": "Obszar mapy"
+      },
+      "mapping_task_state": {
+        "name": "Stan mapowania"
+      },
       "zones": {
         "name": "Strefy"
       },
