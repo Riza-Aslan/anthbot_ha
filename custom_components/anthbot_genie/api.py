@@ -866,25 +866,24 @@ class AnthbotShadowApiClient:
 
     async def async_publish_service_command(self, *, cmd: str, data: Any) -> None:
         """Publish a service command to the mower service shadow topic."""
-        # volume_ctl uses a different payload structure
-        if cmd == "volume_ctl":
-            # Extract volume value from dict if needed
-            volume_value = data.get("volume") if isinstance(data, dict) else data
-            body = {"state": {"desired": {"volume_ctl": int(volume_value)}}}
+        # Determine topic and payload based on device model
+        is_m_series = self._device_model and ("M5" in str(self._device_model).upper() or "M9" in str(self._device_model).upper())
+        
+        if is_m_series:
+            # M5/M9 devices use the property shadow with flat payload structure
+            topic = f"$aws/things/{self._serial_number}/shadow/name/property/update"
+            # Flat structure: data dict is directly placed in desired
+            if isinstance(data, dict):
+                body = {"state": {"desired": data}}
+            else:
+                # Fallback for non-dict data
+                body = {"state": {"desired": {cmd: data}}}
         else:
+            # Genie 600 and other devices use the service shadow with cmd/data structure
+            topic = f"$aws/things/{self._serial_number}/shadow/name/service/update"
             body = {"state": {"desired": {"cmd": cmd, "data": data}}}
+        
         payload_bytes = json.dumps(body, separators=(",", ":")).encode("utf-8")
-        
-        # Determine shadow name based on command type
-        # param_set, get_all_props, and volume_ctl use the "property" named shadow
-        # other commands use the "service" named shadow
-        property_commands = {"param_set", "get_all_props", "volume_ctl"}
-        if cmd in property_commands:
-            shadow_name = "property"
-        else:
-            shadow_name = "service"
-        
-        topic = f"$aws/things/{self._serial_number}/shadow/name/{shadow_name}/update"
         
         request_uri_encoded = "/topics/" + quote(topic, safe="-_.~")
         request_uri_raw = f"/topics/{topic}"
