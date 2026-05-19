@@ -40,13 +40,25 @@ def _is_connected(data: dict[str, Any]) -> bool:
 
 
 def _is_charging(data: dict[str, Any]) -> bool:
+    """Check if mower is charging.
+    
+    Supports both Genie 600 (robot_sta.value) and M5/M9 (mode.value) formats.
+    """
+    # Try Genie 600 format first: robot_sta.value
     robot_sta = data.get("robot_sta")
-    if not isinstance(robot_sta, dict):
-        return False
-    value = robot_sta.get("value")
-    if not isinstance(value, str):
-        return False
-    return value.lower() in {"charge", "charging", "charge_start"}
+    if isinstance(robot_sta, dict):
+        value = robot_sta.get("value")
+        if isinstance(value, str):
+            return value.lower() in {"charge", "charging", "charge_start"}
+    
+    # Try M5/M9 format: mode.value (fallback for newer models)
+    mode = data.get("mode")
+    if isinstance(mode, dict):
+        value = mode.get("value")
+        if isinstance(value, str):
+            return value.lower() in {"charge", "charging", "charge_start"}
+    
+    return False
 
 
 def _is_custom_mowing_direction_enabled(data: dict[str, Any]) -> bool:

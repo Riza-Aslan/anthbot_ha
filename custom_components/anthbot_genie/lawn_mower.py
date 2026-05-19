@@ -66,17 +66,32 @@ _ROBOT_STATUS_BY_CODE: tuple[str, ...] = (
 
 
 def _raw_robot_status(data: dict[str, Any]) -> str | None:
-    """Return raw robot status from shadow payload."""
+    """Return raw robot status from shadow payload.
+    
+    Supports both Genie 600 (robot_sta.value) and M5/M9 (mode.value) formats.
+    """
+    # Try Genie 600 format first: robot_sta.value
     robot_sta = data.get("robot_sta")
-    if not isinstance(robot_sta, dict):
-        return None
-    value = robot_sta.get("value")
-    if isinstance(value, str):
-        return value.lower()
-    if isinstance(value, int):
-        if 0 <= value < len(_ROBOT_STATUS_BY_CODE):
-            return _ROBOT_STATUS_BY_CODE[value]
-        return str(value)
+    if isinstance(robot_sta, dict):
+        value = robot_sta.get("value")
+        if isinstance(value, str):
+            return value.lower()
+        if isinstance(value, int):
+            if 0 <= value < len(_ROBOT_STATUS_BY_CODE):
+                return _ROBOT_STATUS_BY_CODE[value]
+            return str(value)
+    
+    # Try M5/M9 format: mode.value (fallback for newer models)
+    mode = data.get("mode")
+    if isinstance(mode, dict):
+        value = mode.get("value")
+        if isinstance(value, str):
+            return value.lower()
+        if isinstance(value, int):
+            if 0 <= value < len(_ROBOT_STATUS_BY_CODE):
+                return _ROBOT_STATUS_BY_CODE[value]
+            return str(value)
+    
     return None
 
 
