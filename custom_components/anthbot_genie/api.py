@@ -752,11 +752,12 @@ class AnthbotShadowApiClient:
 
     async def async_get_service_reported_state(self) -> dict[str, Any]:
         """Fetch service shadow and return state.reported."""
-        # M5/M9 devices use the property shadow instead of service shadow
-        # since they don't have access to the service named shadow
         is_m_series = self._device_model and ("M5" in str(self._device_model).upper() or "M9" in str(self._device_model).upper())
-        if is_m_series:
-            return await self._async_get_named_shadow_reported_state("property")
+        if self._device_model in ["M5", "M9"] or is_m_series:
+            # M5/M9 devices report all their state via the property shadow.
+            # Attempting to read the service shadow (or double-reading the property shadow)
+            # causes 403 Forbidden errors. We skip reading service state for them.
+            return {}
         return await self._async_get_named_shadow_reported_state("service")
 
     async def _async_signed_post(
