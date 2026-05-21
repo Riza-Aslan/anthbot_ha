@@ -875,11 +875,18 @@ class AnthbotShadowApiClient:
             
             desired_data = {}
             if cmd == "param_set":
-                # Translate mow_head to cutter_ctl_cutter_lift
-                val = data.get("mow_head") if isinstance(data, dict) else data
+                # Robust extraction of mowing height
+                if isinstance(data, dict):
+                    val = data.get("mow_head") or data.get("value") or data.get("cutter_ctl_cutter_lift") or list(data.values())[0]
+                else:
+                    val = data
                 desired_data["cutter_ctl_cutter_lift"] = int(val)
             elif cmd == "volume_ctl":
-                val = data.get("volume") if isinstance(data, dict) else data
+                # Robust extraction of volume
+                if isinstance(data, dict):
+                    val = data.get("volume") or data.get("volume_ctl") or data.get("value") or list(data.values())[0]
+                else:
+                    val = data
                 desired_data["volume_ctl"] = int(val)
             else:
                 # Fallback for other flat parameters
