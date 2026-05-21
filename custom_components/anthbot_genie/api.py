@@ -870,8 +870,9 @@ class AnthbotShadowApiClient:
         is_m_series = self._device_model and ("M5" in str(self._device_model).upper() or "M9" in str(self._device_model).upper())
         
         if self._device_model in ["M5", "M9"] or is_m_series:
-            # M5 und M9 erwarten Steuerbefehle flach im 'service'-Shadow
-            topic = f"$aws/things/{self._serial_number}/shadow/name/service/update"
+            # Wir wechseln zurück auf das property-Topic, aber mit der sauberen, flachen Struktur!
+            topic = f"$aws/things/{self._serial_number}/shadow/name/property/update"
+
             
             desired_data = {}
             if cmd == "param_set":
@@ -879,6 +880,7 @@ class AnthbotShadowApiClient:
                     val = data.get('mow_head') or data.get('value') or data.get('cutter_ctl_cutter_lift') or list(data.values())[0]
                 else:
                     val = data
+                # Wir senden den exakten Namen, den der Mäher auch beim Lesen nutzt
                 desired_data["cutter_ctl_cutter_lift"] = int(val)
 
             elif cmd == "volume_ctl":
