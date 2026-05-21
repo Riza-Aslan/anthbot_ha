@@ -872,12 +872,20 @@ class AnthbotShadowApiClient:
         if is_m_series:
             # M5/M9 devices use the property shadow with flat payload structure
             topic = f"$aws/things/{self._serial_number}/shadow/name/property/update"
-            # Flat structure: data dict is directly placed in desired
-            if isinstance(data, dict):
-                body = {"state": {"desired": data}}
+            
+            desired_data = {}
+            if cmd == "param_set":
+                # Translate mow_head to cutter_ctl_cutter_lift
+                val = data.get("mow_head") if isinstance(data, dict) else data
+                desired_data["cutter_ctl_cutter_lift"] = int(val)
+            elif cmd == "volume_ctl":
+                val = data.get("volume") if isinstance(data, dict) else data
+                desired_data["volume_ctl"] = int(val)
             else:
-                # Fallback for non-dict data
-                body = {"state": {"desired": {cmd: data}}}
+                # Fallback for other flat parameters
+                desired_data = data if isinstance(data, dict) else {cmd: data}
+            
+            body = {"state": {"reported": desired_data}}
         else:
             # Genie 600 and other devices use the service shadow with cmd/data structure
             topic = f"$aws/things/{self._serial_number}/shadow/name/service/update"
