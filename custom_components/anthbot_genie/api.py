@@ -872,6 +872,7 @@ class AnthbotShadowApiClient:
         if self._device_model in ["M5", "M9"] or is_m_series:
             # Wir wechseln zurück auf das property-Topic, aber mit der sauberen, flachen Struktur!
             topic = f"$aws/things/{self._serial_number}/shadow/name/property/update"
+
             
             desired_data = {}
             if cmd == "param_set":
