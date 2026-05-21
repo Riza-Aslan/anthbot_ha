@@ -869,32 +869,39 @@ class AnthbotShadowApiClient:
         # Determine topic and payload based on device model
         is_m_series = self._device_model and ("M5" in str(self._device_model).upper() or "M9" in str(self._device_model).upper())
         
-        if is_m_series:
-            # M5/M9 devices use the property shadow with flat payload structure
+        if self._device_model in ["M5", "M9"] or is_m_series:
+            # M5 und M9 nutzen für alle Geräteeinstellungen ausschließlich den property-Shadow
             topic = f"$aws/things/{self._serial_number}/shadow/name/property/update"
             
             desired_data = {}
             if cmd == "param_set":
-                # Robust extraction of mowing height
+                # Robuste Extraktion der Schnitthöhe aus dem übergebenen 'data'-Objekt
                 if isinstance(data, dict):
-                    val = data.get("mow_head") or data.get("value") or data.get("cutter_ctl_cutter_lift") or list(data.values())[0]
+                    val = data.get('mow_head') or data.get('value') or data.get('cutter_ctl_cutter_lift') or list(data.values())[0]
                 else:
                     val = data
                 desired_data["cutter_ctl_cutter_lift"] = int(val)
+
             elif cmd == "volume_ctl":
-                # Robust extraction of volume
+                # Robuste Extraktion der Lautstärke aus dem übergebenen 'data'-Objekt
                 if isinstance(data, dict):
-                    val = data.get("volume") or data.get("volume_ctl") or data.get("value") or list(data.values())[0]
+                    val = data.get('volume') or data.get('volume_ctl') or data.get('value') or list(data.values())[0]
                 else:
                     val = data
                 desired_data["volume_ctl"] = int(val)
+
             else:
-                # Fallback for other flat parameters
+                # Fallback für eventuelle andere Befehle
                 desired_data = data if isinstance(data, dict) else {cmd: data}
-            
-            body = {"state": {"reported": desired_data}}
+
+            # Verpacken in den 'desired' Block, damit der Mäher die Änderung physisch ausführt
+            body = {
+                "state": {
+                    "desired": desired_data
+                }
+            }
         else:
-            # Genie 600 and other devices use the service shadow with cmd/data structure
+            # Bestehende Legacy-Logik für ältere Modelle (z.B. Genie 600) absolut unverändert lassen
             topic = f"$aws/things/{self._serial_number}/shadow/name/service/update"
             body = {"state": {"desired": {"cmd": cmd, "data": data}}}
         
