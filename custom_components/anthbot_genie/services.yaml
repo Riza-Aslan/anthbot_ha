@@ -51,19 +51,19 @@ set_mow_height:
       name: Mow height
       description: Cutting height in millimeters.
       required: true
-      example: 50
+      example: "50"
       selector:
         select:
           options:
-            - 30
-            - 35
-            - 40
-            - 45
-            - 50
-            - 55
-            - 60
-            - 65
-            - 70
+            - "30"
+            - "35"
+            - "40"
+            - "45"
+            - "50"
+            - "55"
+            - "60"
+            - "65"
+            - "70"
     serial_number:
       name: Serial number
       description: Optional mower serial number or list of serial numbers.

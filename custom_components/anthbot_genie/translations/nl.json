@@ -49,11 +49,56 @@
       "battery_level": {
         "name": "Batterijniveau"
       },
+      "mode": {
+        "name": "Modus"
+      },
+      "error_code": {
+        "name": "Foutcode"
+      },
+      "ip_address": {
+        "name": "IP-adres"
+      },
+      "wifi_ssid": {
+        "name": "WiFi SSID"
+      },
+      "mowing_area_total": {
+        "name": "Maaigebied (totaal)"
+      },
+      "mowing_time_total": {
+        "name": "Maaiduurtijd (totaal)"
+      },
+      "rtk_state": {
+        "name": "RTK-status"
+      },
+      "map_area": {
+        "name": "Kaartgebied"
+      },
+      "mapping_task_state": {
+        "name": "Kaarttaakstatus"
+      },
       "zones": {
         "name": "Zones"
       },
       "auto_zones": {
         "name": "Autozones"
+      },
+      "volume": {
+        "name": "Volume"
+      },
+      "sim_id": {
+        "name": "SIM-ID"
+      },
+      "ota_status": {
+        "name": "OTA-status"
+      },
+      "ota_progress": {
+        "name": "OTA-voortgang"
+      },
+      "firmware_version": {
+        "name": "Firmwareversie"
+      },
+      "mow_count": {
+        "name": "Maaibeurtenteller"
       }
     },
     "binary_sensor": {
@@ -65,6 +110,24 @@
       },
       "custom_mowing_direction_enabled": {
         "name": "Aangepaste maairichting ingeschakeld"
+      },
+      "rain_sensor": {
+        "name": "Regensensor"
+      },
+      "camera": {
+        "name": "Camera"
+      },
+      "anti_theft": {
+        "name": "Diefstalbeveiliging"
+      },
+      "wifi_connected": {
+        "name": "WiFi verbonden"
+      },
+      "mobile_connected": {
+        "name": "Mobiel verbonden"
+      },
+      "adaptive_head_enabled": {
+        "name": "Adaptieve positie ingeschakeld"
       }
     },
     "button": {

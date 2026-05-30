@@ -31,6 +31,18 @@ from .mow_params import (
 from .zones import active_manual_zone_ids, auto_zones, manual_zones
 
 
+def _path_exists(data: dict[str, Any], *keys: str) -> bool:
+    """Check if a nested path exists in the data dictionary."""
+    current = data
+    for key in keys:
+        if not isinstance(current, dict):
+            return False
+        if key not in current:
+            return False
+        current = current[key]
+    return True
+
+
 def _is_custom_mowing_direction_enabled(data: dict[str, Any]) -> bool:
     """Map raw enable_adaptive_head value to custom-direction state."""
     return custom_direction_enabled_from_state(data)
@@ -81,17 +93,32 @@ MOWER_STATUS_OPTIONS: list[str] = [
 
 
 def _raw_robot_status(data: dict[str, Any]) -> str | None:
-    """Return raw robot status from shadow payload."""
+    """Return raw robot status from shadow payload.
+    
+    Supports both Genie 600 (robot_sta.value) and M5/M9 (mode.value) formats.
+    """
+    # Try Genie 600 format first: robot_sta.value
     robot_sta = data.get("robot_sta")
-    if not isinstance(robot_sta, dict):
-        return None
-    value = robot_sta.get("value")
-    if isinstance(value, str):
-        return value.lower()
-    if isinstance(value, int):
-        if 0 <= value < len(_ROBOT_STATUS_BY_CODE):
-            return _ROBOT_STATUS_BY_CODE[value]
-        return str(value)
+    if isinstance(robot_sta, dict):
+        value = robot_sta.get("value")
+        if isinstance(value, str):
+            return value.lower()
+        if isinstance(value, int):
+            if 0 <= value < len(_ROBOT_STATUS_BY_CODE):
+                return _ROBOT_STATUS_BY_CODE[value]
+            return str(value)
+    
+    # Try M5/M9 format: mode.value (fallback for newer models)
+    mode = data.get("mode")
+    if isinstance(mode, dict):
+        value = mode.get("value")
+        if isinstance(value, str):
+            return value.lower()
+        if isinstance(value, int):
+            if 0 <= value < len(_ROBOT_STATUS_BY_CODE):
+                return _ROBOT_STATUS_BY_CODE[value]
+            return str(value)
+    
     return None
 
 
@@ -248,9 +275,202 @@ SENSORS: tuple[AnthbotSensorDescription, ...] = (
         native_unit_of_measurement=PERCENTAGE,
         device_class=SensorDeviceClass.BATTERY,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: data.get("elec"),
+        value_fn=lambda data: (
+            data.get("elec", {}).get("value")
+            if isinstance(data.get("elec"), dict)
+            else data.get("elec")
+        ),
+    ),
+    # M5-specific sensors with safe fallback for Genie 600 compatibility
+    AnthbotSensorDescription(
+        key="mode",
+        translation_key="mode",
+        name="Mode",
+        value_fn=lambda data: (
+            data.get("mode", {}).get("value")
+            if isinstance(data.get("mode"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="error_code",
+        translation_key="error_code",
+        name="Error code",
+        value_fn=lambda data: (
+            data.get("error", {}).get("value")
+            if isinstance(data.get("error"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="ip_address",
+        translation_key="ip_address",
+        name="IP address",
+        value_fn=lambda data: (
+            data.get("net_config", {}).get("ip")
+            if isinstance(data.get("net_config"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="wifi_ssid",
+        translation_key="wifi_ssid",
+        name="WiFi SSID",
+        value_fn=lambda data: (
+            data.get("net_config", {}).get("ssid")
+            if isinstance(data.get("net_config"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="mowing_area_total",
+        translation_key="mowing_area_total",
+        name="Mowing area (total)",
+        native_unit_of_measurement=UnitOfArea.SQUARE_METERS,
+        device_class=SensorDeviceClass.AREA,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: (
+            data.get("mowing_area", {}).get("value")
+            if isinstance(data.get("mowing_area"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="mowing_time_total",
+        translation_key="mowing_time_total",
+        name="Mowing time (total)",
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: (
+            int(data.get("mowing_time", {}).get("value") / 60)
+            if isinstance(data.get("mowing_time"), dict) and data.get("mowing_time", {}).get("value") is not None
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="rtk_state",
+        translation_key="rtk_state",
+        name="RTK state",
+        value_fn=lambda data: (
+            str(data.get("rtk", {}).get("state"))
+            if isinstance(data.get("rtk"), dict) and data.get("rtk", {}).get("state") is not None
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="map_area",
+        translation_key="map_area",
+        name="Map area",
+        native_unit_of_measurement=UnitOfArea.SQUARE_METERS,
+        device_class=SensorDeviceClass.AREA,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: (
+            data.get("map", {}).get("map_area")
+            if isinstance(data.get("map"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="mapping_task_state",
+        translation_key="mapping_task_state",
+        name="Mapping task state",
+        value_fn=lambda data: (
+            str(data.get("mapping_task", {}).get("state"))
+            if isinstance(data.get("mapping_task"), dict) and data.get("mapping_task", {}).get("state") is not None
+            else None
+        ),
+    ),
+    # Additional M5/M9 sensors
+    AnthbotSensorDescription(
+        key="volume",
+        translation_key="volume",
+        name="Volume",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: (
+            data.get("device_config", {}).get("volume")
+            if isinstance(data.get("device_config"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="sim_id",
+        translation_key="sim_id",
+        name="SIM ID",
+        value_fn=lambda data: (
+            data.get("net_config", {}).get("4g_ccid")
+            if isinstance(data.get("net_config"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="ota_status",
+        translation_key="ota_status",
+        name="OTA status",
+        value_fn=lambda data: (
+            data.get("ota_status", {}).get("states")
+            if isinstance(data.get("ota_status"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="ota_progress",
+        translation_key="ota_progress",
+        name="OTA progress",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: (
+            data.get("ota_status", {}).get("progress")
+            if isinstance(data.get("ota_status"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="firmware_version",
+        translation_key="firmware_version",
+        name="Firmware version",
+        value_fn=lambda data: (
+            data.get("fw_version", {}).get("system_version")
+            if isinstance(data.get("fw_version"), dict)
+            else None
+        ),
+    ),
+    AnthbotSensorDescription(
+        key="mow_count",
+        translation_key="mow_count",
+        name="Mow count",
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: (
+            data.get("param_set", {}).get("mow_count")
+            if isinstance(data.get("param_set"), dict)
+            else None
+        ),
     ),
 )
+
+
+def _sensor_path_for_description(description: AnthbotSensorDescription) -> list[str] | None:
+    """Return the data path for a sensor description, if it has one."""
+    # Map sensor keys to their data paths for conditional creation
+    path_map: dict[str, list[str]] = {
+        "volume": ["device_config", "volume"],
+        "sim_id": ["net_config", "4g_ccid"],
+        "ota_status": ["ota_status", "states"],
+        "ota_progress": ["ota_status", "progress"],
+        "firmware_version": ["fw_version", "system_version"],
+        "mow_count": ["param_set", "mow_count"],
+        "mode": ["mode", "value"],
+        "error_code": ["error", "value"],
+        "ip_address": ["net_config", "ip"],
+        "wifi_ssid": ["net_config", "ssid"],
+        "mowing_area_total": ["mowing_area", "value"],
+        "mowing_time_total": ["mowing_time", "value"],
+        "rtk_state": ["rtk", "state"],
+        "map_area": ["map", "map_area"],
+        "mapping_task_state": ["mapping_task", "state"],
+    }
+    return path_map.get(description.key)
 
 
 async def async_setup_entry(
@@ -262,11 +482,19 @@ async def async_setup_entry(
     coordinators: list[AnthbotGenieDataUpdateCoordinator] = hass.data[DOMAIN][
         entry.entry_id
     ]
-    async_add_entities(
-        AnthbotSensorEntity(coordinator, description)
-        for coordinator in coordinators
-        for description in SENSORS
-    )
+    
+    entities_to_add: list[AnthbotSensorEntity] = []
+    for coordinator in coordinators:
+        state = coordinator.reported_state
+        for description in SENSORS:
+            # Check if the data path exists for conditional sensor creation
+            path = _sensor_path_for_description(description)
+            if path is not None:
+                if not _path_exists(state, *path):
+                    continue
+            entities_to_add.append(AnthbotSensorEntity(coordinator, description))
+    
+    async_add_entities(entities_to_add)
 
 
 class AnthbotSensorEntity(
@@ -381,6 +609,42 @@ class AnthbotSensorEntity(
             ),
             "last_service_command_generation": (
                 service_reported.get("generation") if service_reported else None
+            ),
+            # M5-specific attributes
+            "mode": (
+                state.get("mode", {}).get("value")
+                if isinstance(state.get("mode"), dict)
+                else None
+            ),
+            "error_code": (
+                state.get("error", {}).get("value")
+                if isinstance(state.get("error"), dict)
+                else None
+            ),
+            "ip_address": (
+                state.get("net_config", {}).get("ip")
+                if isinstance(state.get("net_config"), dict)
+                else None
+            ),
+            "wifi_ssid": (
+                state.get("net_config", {}).get("ssid")
+                if isinstance(state.get("net_config"), dict)
+                else None
+            ),
+            "rtk_state": (
+                state.get("rtk", {}).get("state")
+                if isinstance(state.get("rtk"), dict)
+                else None
+            ),
+            "map_area": (
+                state.get("map", {}).get("map_area")
+                if isinstance(state.get("map"), dict)
+                else None
+            ),
+            "mapping_task_state": (
+                state.get("mapping_task", {}).get("state")
+                if isinstance(state.get("mapping_task"), dict)
+                else None
             ),
         }
         if self.entity_description.key == "zones":
