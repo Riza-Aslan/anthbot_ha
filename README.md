@@ -197,6 +197,7 @@ You can trigger/test commands directly from those entities in the device page.
 
 Recent community contributions include:
 
+- Anthbot M5/M9 model support by `@riza-aslan`.
 - Standard Home Assistant `lawn_mower` entity support by Denis Kot / `DenisBY` in PR #12.
 - Polish translations by Tomasz Terlecki / `tazmanska` in PR #9.
 
