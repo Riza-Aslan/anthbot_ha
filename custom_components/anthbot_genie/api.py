@@ -466,10 +466,12 @@ class AnthbotShadowApiClient:
         serial_number: str,
         region_name: str | None,
         iot_endpoint: str | None,
+        account_client: AnthbotCloudApiClient | None = None,
         iot_credentials: AnthbotTemporaryIotCredentials | None = None,
     ) -> None:
         self._session = session
         self._serial_number = serial_number
+        self._account_client = account_client
         self._region_name = (
             region_name if isinstance(region_name, str) and region_name else None
         )
@@ -505,7 +507,7 @@ class AnthbotShadowApiClient:
         )
 
     async def async_ensure_temporary_credentials(
-        self, account_client: AnthbotCloudApiClient
+        self, account_client: AnthbotCloudApiClient | None = None
     ) -> None:
         """Refresh temporary AWS IoT credentials before they expire."""
         if (
@@ -513,9 +515,23 @@ class AnthbotShadowApiClient:
             and time.monotonic() < self._temporary_credentials_expires_at
         ):
             return
+        await self.async_refresh_temporary_credentials(account_client)
+
+    async def async_refresh_temporary_credentials(
+        self, account_client: AnthbotCloudApiClient | None = None
+    ) -> None:
+        """Force-refresh temporary AWS IoT credentials."""
+        credential_client = account_client or self._account_client
+        if credential_client is None:
+            raise AnthbotGenieApiError("IoT credential refresh client not configured")
         self.set_temporary_credentials(
-            await account_client.async_get_device_iot_credentials(self._serial_number)
+            await credential_client.async_get_device_iot_credentials(self._serial_number)
         )
+
+    @staticmethod
+    def _is_forbidden_status(status: int) -> bool:
+        """Return whether an IoT response status should refresh credentials."""
+        return status == 403
 
     @staticmethod
     def _normalize_endpoint(iot_endpoint: str | None) -> str:
@@ -663,7 +679,7 @@ class AnthbotShadowApiClient:
         return "".join(encoded)
 
     async def _async_get_named_shadow_reported_state(
-        self, shadow_name: str
+        self, shadow_name: str, *, allow_credential_refresh: bool = True
     ) -> dict[str, Any]:
         """Fetch a named device shadow and return state.reported."""
         request_uri = f"/things/{quote(self._serial_number, safe='-_.~')}/shadow"
@@ -725,8 +741,26 @@ class AnthbotShadowApiClient:
             async with self._session.get(url, headers=headers, timeout=15) as response:
                 if response.status != 200:
                     body = await response.text()
+                    if (
+                        self._is_forbidden_status(response.status)
+                        and allow_credential_refresh
+                        and self._account_client is not None
+                    ):
+                        _LOGGER.debug(
+                            "Anthbot shadow request failed with 403, refreshing IoT credentials: sn=%s endpoint=%s region=%s",
+                            self._serial_number,
+                            self._iot_endpoint,
+                            self.signing_region,
+                        )
+                        await self.async_refresh_temporary_credentials()
+                        return await self._async_get_named_shadow_reported_state(
+                            shadow_name,
+                            allow_credential_refresh=False,
+                        )
                     raise AnthbotGenieApiError(
-                        f"Shadow request failed ({response.status}): {body[:300]}"
+                        f"Shadow request failed ({response.status}) at endpoint "
+                        f"'{self._iot_endpoint}' (region '{self.signing_region}'): "
+                        f"{body[:300]}"
                     )
                 payload = await response.json(content_type=None)
         except ClientError as err:
@@ -887,51 +921,70 @@ class AnthbotShadowApiClient:
         last_status = 0
         last_body = ""
         last_headers: dict[str, str] = {}
-        for attempt_index, (
-            request_uri,
-            include_sdk_headers,
-            canonical_uri_override,
-            sign_content_length,
-        ) in enumerate(attempts):
-            status, body_text, payload, response_headers = await self._async_signed_post(
-                request_uri=request_uri,
-                canonical_query="",
-                payload_bytes=payload_bytes,
-                include_sdk_headers=include_sdk_headers,
-                canonical_uri_override=canonical_uri_override,
-                sign_content_length=sign_content_length,
-            )
-            if status == 200 and isinstance(payload, dict):
-                if attempt_index > 0:
-                    _LOGGER.debug(
-                        "Anthbot command publish recovered after fallback: cmd=%s sn=%s endpoint=%s region=%s uri=%s sdk_headers=%s canonical_override=%s sign_content_length=%s",
-                        cmd,
-                        self._serial_number,
-                        self._iot_endpoint,
-                        self.signing_region,
-                        request_uri,
-                        include_sdk_headers,
-                        canonical_uri_override is not None,
-                        sign_content_length,
-                    )
-                return
-            last_status = status
-            last_body = body_text
-            last_headers = response_headers
-            if status != 403:
-                break
-            _LOGGER.debug(
-                "Anthbot command publish attempt failed (403): cmd=%s sn=%s uri=%s sdk_headers=%s canonical_override=%s sign_content_length=%s errortype=%s requestid=%s",
-                cmd,
-                self._serial_number,
+        for refresh_attempt in range(2):
+            for attempt_index, (
                 request_uri,
                 include_sdk_headers,
-                canonical_uri_override is not None,
+                canonical_uri_override,
                 sign_content_length,
-                response_headers.get("x-amzn-errortype", ""),
-                response_headers.get("x-amzn-requestid", "")
-                or response_headers.get("x-amzn-request-id", ""),
-            )
+            ) in enumerate(attempts):
+                status, body_text, payload, response_headers = (
+                    await self._async_signed_post(
+                        request_uri=request_uri,
+                        canonical_query="",
+                        payload_bytes=payload_bytes,
+                        include_sdk_headers=include_sdk_headers,
+                        canonical_uri_override=canonical_uri_override,
+                        sign_content_length=sign_content_length,
+                    )
+                )
+                if status == 200 and isinstance(payload, dict):
+                    if attempt_index > 0 or refresh_attempt > 0:
+                        _LOGGER.debug(
+                            "Anthbot command publish recovered after fallback: cmd=%s sn=%s endpoint=%s region=%s uri=%s sdk_headers=%s canonical_override=%s sign_content_length=%s refreshed=%s",
+                            cmd,
+                            self._serial_number,
+                            self._iot_endpoint,
+                            self.signing_region,
+                            request_uri,
+                            include_sdk_headers,
+                            canonical_uri_override is not None,
+                            sign_content_length,
+                            refresh_attempt > 0,
+                        )
+                    return
+                last_status = status
+                last_body = body_text
+                last_headers = response_headers
+                if status != 403:
+                    break
+                _LOGGER.debug(
+                    "Anthbot command publish attempt failed (403): cmd=%s sn=%s uri=%s sdk_headers=%s canonical_override=%s sign_content_length=%s errortype=%s requestid=%s",
+                    cmd,
+                    self._serial_number,
+                    request_uri,
+                    include_sdk_headers,
+                    canonical_uri_override is not None,
+                    sign_content_length,
+                    response_headers.get("x-amzn-errortype", ""),
+                    response_headers.get("x-amzn-requestid", "")
+                    or response_headers.get("x-amzn-request-id", ""),
+                )
+            if (
+                self._is_forbidden_status(last_status)
+                and refresh_attempt == 0
+                and self._account_client is not None
+            ):
+                _LOGGER.debug(
+                    "Anthbot command publish failed with 403, refreshing IoT credentials: cmd=%s sn=%s endpoint=%s region=%s",
+                    cmd,
+                    self._serial_number,
+                    self._iot_endpoint,
+                    self.signing_region,
+                )
+                await self.async_refresh_temporary_credentials()
+                continue
+            break
 
         raise AnthbotGenieApiError(
             f"Command '{cmd}' failed ({last_status}) at endpoint '{self._iot_endpoint}' "
