@@ -13,7 +13,7 @@ CONF_PASSWORD = "password"
 CONF_AREA_CODE = "area_code"
 CONF_SCAN_INTERVAL = "scan_interval"
 
-DEFAULT_NAME = "Anthbot Genie 600"
+DEFAULT_NAME = "Anthbot HA"
 DEFAULT_API_HOST = "api.anthbot.com"
 DEFAULT_AREA_CODE = "32"
 

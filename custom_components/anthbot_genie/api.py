@@ -15,6 +15,7 @@ import uuid
 from urllib.parse import parse_qs, quote, urlparse
 
 from aiohttp import ClientError, ClientSession
+from yarl import URL
 
 from homeassistant.exceptions import HomeAssistantError
 
@@ -468,9 +469,11 @@ class AnthbotShadowApiClient:
         iot_endpoint: str | None,
         account_client: AnthbotCloudApiClient | None = None,
         iot_credentials: AnthbotTemporaryIotCredentials | None = None,
+        device_model: str | None = None,
     ) -> None:
         self._session = session
         self._serial_number = serial_number
+        self._device_model = device_model
         self._account_client = account_client
         self._region_name = (
             region_name if isinstance(region_name, str) and region_name else None
@@ -784,6 +787,11 @@ class AnthbotShadowApiClient:
 
     async def async_get_service_reported_state(self) -> dict[str, Any]:
         """Fetch service shadow and return state.reported."""
+        # M5/M9 devices use the property shadow instead of service shadow
+        # since they don't have access to the service named shadow
+        is_m_series = self._device_model and ("M5" in str(self._device_model).upper() or "M9" in str(self._device_model).upper())
+        if is_m_series:
+            return await self._async_get_named_shadow_reported_state("property")
         return await self._async_get_named_shadow_reported_state("service")
 
     async def _async_signed_post(
@@ -866,7 +874,7 @@ class AnthbotShadowApiClient:
 
         try:
             async with self._session.post(
-                url,
+                URL(url, encoded=True),
                 headers=headers,
                 data=payload_bytes,
                 timeout=15,
@@ -893,9 +901,47 @@ class AnthbotShadowApiClient:
 
     async def async_publish_service_command(self, *, cmd: str, data: Any) -> None:
         """Publish a service command to the mower service shadow topic."""
-        body = {"state": {"desired": {"cmd": cmd, "data": data}}}
+        # Determine topic and payload based on device model
+        is_m_series = self._device_model and ("M5" in str(self._device_model).upper() or "M9" in str(self._device_model).upper())
+        
+        if self._device_model in ["M5", "M9"] or is_m_series:
+            # Für M5/M9 nutzen wir den service-Shadow, aber verpacken die neuen Variablen
+            # innerhalb eines data-Objekts, analog zur Legacy-Logik, damit der Mäher reagiert.
+            topic = f"$aws/things/{self._serial_number}/shadow/name/service/update"
+            
+            desired_data = {}
+            if cmd == "param_set":
+                if isinstance(data, dict):
+                    val = data.get('mow_head') or data.get('value') or data.get('cutter_ctl_cutter_lift') or list(data.values())[0]
+                else:
+                    val = data
+                desired_data["cutter_ctl_cutter_lift"] = int(val)
+
+            elif cmd == "volume_ctl":
+                if isinstance(data, dict):
+                    val = data.get('volume') or data.get('volume_ctl') or data.get('value') or list(data.values())[0]
+                else:
+                    val = data
+                desired_data["volume_ctl"] = int(val)
+
+            else:
+                desired_data = data if isinstance(data, dict) else {cmd: data}
+
+            body = {
+                "state": {
+                    "desired": {
+                        "cmd": cmd,
+                        "data": desired_data
+                    }
+                }
+            }
+        else:
+            # Legacy-Logik für ältere Modelle (Genie 600) bleibt unberührt
+            topic = f"$aws/things/{self._serial_number}/shadow/name/service/update"
+            body = {"state": {"desired": {"cmd": cmd, "data": data}}}
+        
         payload_bytes = json.dumps(body, separators=(",", ":")).encode("utf-8")
-        topic = f"$aws/things/{self._serial_number}/shadow/name/service/update"
+        
         request_uri_encoded = "/topics/" + quote(topic, safe="-_.~")
         request_uri_raw = f"/topics/{topic}"
 

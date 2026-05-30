@@ -49,11 +49,56 @@
       "battery_level": {
         "name": "Poziom naładowania baterii"
       },
+      "mode": {
+        "name": "Tryb"
+      },
+      "error_code": {
+        "name": "Kod błędu"
+      },
+      "ip_address": {
+        "name": "Adres IP"
+      },
+      "wifi_ssid": {
+        "name": "WiFi SSID"
+      },
+      "mowing_area_total": {
+        "name": "Obszar koszenia (całkowity)"
+      },
+      "mowing_time_total": {
+        "name": "Czas koszenia (całkowity)"
+      },
+      "rtk_state": {
+        "name": "Stan RTK"
+      },
+      "map_area": {
+        "name": "Obszar mapy"
+      },
+      "mapping_task_state": {
+        "name": "Stan mapowania"
+      },
       "zones": {
         "name": "Strefy"
       },
       "auto_zones": {
         "name": "Strefy automatyczne"
+      },
+      "volume": {
+        "name": "Głośność"
+      },
+      "sim_id": {
+        "name": "ID karty SIM"
+      },
+      "ota_status": {
+        "name": "Status OTA"
+      },
+      "ota_progress": {
+        "name": "Postęp OTA"
+      },
+      "firmware_version": {
+        "name": "Wersja firmware"
+      },
+      "mow_count": {
+        "name": "Licznik koszeń"
       }
     },
     "binary_sensor": {
@@ -65,6 +110,24 @@
       },
       "custom_mowing_direction_enabled": {
         "name": "Status niestandardowego kierunku koszenia"
+      },
+      "rain_sensor": {
+        "name": "Czujnik deszczu"
+      },
+      "camera": {
+        "name": "Kamera"
+      },
+      "anti_theft": {
+        "name": "Antykradzież"
+      },
+      "wifi_connected": {
+        "name": "WiFi połączone"
+      },
+      "mobile_connected": {
+        "name": "Połączenie mobilne"
+      },
+      "adaptive_head_enabled": {
+        "name": "Adaptacyjna pozycja włączona"
       }
     },
     "button": {
