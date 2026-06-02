@@ -932,6 +932,10 @@ class AnthbotShadowApiClient:
             else:
                 desired_data = data if isinstance(data, dict) else {cmd: data}
 
+            # Fast alle ctl_ Kommandos in der App schicken einen Timestamp mit,
+            # sonst ignoriert die Firmware den Befehl als "veraltet".
+            desired_data["timestamp"] = int(time.time() * 1000)
+
             body = {
                 "state": {
                     "desired": {
