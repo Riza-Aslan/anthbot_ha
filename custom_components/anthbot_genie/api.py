@@ -876,7 +876,10 @@ class AnthbotShadowApiClient:
             topic = f"$aws/things/{self._serial_number}/shadow/name/service/update"
             
             desired_data = {}
+            m5_cmd = cmd
+
             if cmd == "param_set":
+                m5_cmd = "ctl_cutter_lift"
                 if isinstance(data, dict):
                     val = data.get('mow_head') or data.get('value') or data.get('cutter_ctl_cutter_lift') or list(data.values())[0]
                 else:
@@ -884,6 +887,7 @@ class AnthbotShadowApiClient:
                 desired_data["cutter_ctl_cutter_lift"] = int(val)
 
             elif cmd == "volume_ctl":
+                m5_cmd = "ctl_voice"
                 if isinstance(data, dict):
                     val = data.get('volume') or data.get('volume_ctl') or data.get('value') or list(data.values())[0]
                 else:
@@ -896,7 +900,7 @@ class AnthbotShadowApiClient:
             body = {
                 "state": {
                     "desired": {
-                        "cmd": cmd,
+                        "cmd": m5_cmd,
                         "data": desired_data
                     }
                 }
