@@ -204,8 +204,8 @@ _STYLE = """<style>
   .zone   { fill: #f0afb8; fill-opacity: .45; stroke: #e2808d; stroke-width: 35;
             stroke-dasharray: 170 100; stroke-linecap: round }
   .forbid { fill: #ff8a8a; fill-opacity: .35; stroke: #e05c5c; stroke-width: 35 }
-  .bridge { fill: none; stroke: #b9bdcb; stroke-width: 70; stroke-linecap: round;
-            stroke-dasharray: 30 120 }
+  .bridge { fill: none; stroke: #aeb3c4; stroke-width: 90; stroke-linecap: round;
+            stroke-dasharray: 60 110 }
   .track  { fill: none; stroke: #ffffff; stroke-opacity: .75; stroke-width: 60;
             stroke-linecap: round; stroke-linejoin: round }
   .mower  { fill: #ffffff; stroke: #2a2f7d; stroke-width: 55 }
@@ -228,6 +228,7 @@ def render_svg(
     width: int = 900,
     padding: int = 300,
     max_aspect: float = 1.6,
+    show_zones: bool = False,
 ) -> str:
     """Render the map as an SVG document.
 
@@ -241,7 +242,10 @@ def render_svg(
     drawing with background instead of distorting it.
     """
     area = mower_map.area_definition
-    zones = _polygons(area, "custom_areas")
+    # The app's main map shows the lawn and the mower, nothing else — drawing
+    # every mowing zone over it turns the lawn into a patchwork. No-go areas
+    # are always drawn: those are exclusions the user needs to see.
+    zones = _polygons(area, "custom_areas") if show_zones else []
     forbidden = _polygons(area, "forbid_areas") + _polygons(
         area, "remote_forbid_areas"
     )
