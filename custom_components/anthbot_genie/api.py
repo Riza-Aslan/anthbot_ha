@@ -398,6 +398,71 @@ class AnthbotCloudApiClient:
 
         return area_definition
 
+    async def async_get_device_file(
+        self,
+        serial_number: str,
+        *,
+        filename: str,
+        sub_category: str,
+        category: str = "device",
+    ) -> bytes:
+        """Download a device file (map, area, ...) via its presigned URL.
+
+        The app requests these with category=device and sub_category one of
+        'map', 'area', 'rtk'. Returns the raw bytes — map files are binary.
+        """
+        self._require_token()
+
+        url = f"https://{self._host}/api/v1/device/v2/presigned_url"
+        params = {
+            "filename": filename,
+            "sn": serial_number,
+            "category": category,
+            "sub_category": sub_category,
+            "verification_token": self.build_verification_token(serial_number),
+        }
+
+        try:
+            async with self._session.get(
+                url, headers=self._auth_headers, params=params, timeout=15
+            ) as resp:
+                if resp.status != 200:
+                    body = await resp.text()
+                    raise AnthbotGenieApiError(
+                        f"Presigned URL for {filename!r} failed ({resp.status}): "
+                        f"{body[:300]}"
+                    )
+                payload = await resp.json(content_type=None)
+        except ClientError as err:
+            raise AnthbotGenieApiError(f"Network error: {err}") from err
+        except TimeoutError as err:
+            raise AnthbotGenieApiError("Request timed out") from err
+
+        if not isinstance(payload, dict) or payload.get("code") != 0:
+            raise AnthbotGenieApiError(
+                f"Presigned URL for {filename!r} returned "
+                f"code={payload.get('code') if isinstance(payload, dict) else '?'}"
+            )
+        data = payload.get("data")
+        presigned_url = data.get("presigned_url") if isinstance(data, dict) else None
+        if not isinstance(presigned_url, str) or not presigned_url:
+            raise AnthbotGenieApiError(
+                f"Presigned URL payload for {filename!r} missing presigned_url"
+            )
+
+        try:
+            async with self._session.get(presigned_url, timeout=30) as resp:
+                if resp.status != 200:
+                    body = await resp.text()
+                    raise AnthbotGenieApiError(
+                        f"Download of {filename!r} failed ({resp.status}): {body[:300]}"
+                    )
+                return await resp.read()
+        except ClientError as err:
+            raise AnthbotGenieApiError(f"Network error: {err}") from err
+        except TimeoutError as err:
+            raise AnthbotGenieApiError("Request timed out") from err
+
     async def async_get_device_presigned_region(self, serial_number: str) -> str | None:
         """Fetch presigned_url metadata and extract AWS region."""
         self._require_token()
