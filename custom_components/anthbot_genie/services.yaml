@@ -169,33 +169,3 @@ start_auto_zone_mow:
       example: "YOUR_MOWER_SERIAL"
       selector:
         text:
-
-send_raw_command:
-  name: Send raw command
-  description: >-
-    Diagnostic: publish an arbitrary command to the mower's service shadow.
-    The Anthbot protocol is reverse-engineered and payload shapes differ per
-    command (see PROTOCOL.md), so this allows trying one without code changes.
-    Nothing in the integration depends on this service.
-  fields:
-    command:
-      name: Command
-      description: Command name, e.g. ctl_cutter or param_set.
-      required: true
-      example: ctl_cutter
-      selector:
-        text:
-    payload:
-      name: Payload
-      description: >-
-        The command's data value. Some commands take a bare number, others an
-        object with only the changed keys.
-      required: true
-      example: 45
-      selector:
-        object:
-    serial_number:
-      name: Serial number
-      description: Limit to one mower. Omit to target all.
-      selector:
-        text:

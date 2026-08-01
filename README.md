@@ -214,6 +214,10 @@ The write path follows what the official app does, per
 The choice is made from what the mower actually reports, not from its model
 name, because the app itself never branches on model.
 
+If a setting occasionally does not take effect, the mower was most likely not
+accepting commands at that moment (it reports `online: 0` when asleep). Simply
+try again — this is a device state, not an integration bug.
+
 ## Community contributions
 
 Recent community contributions include:

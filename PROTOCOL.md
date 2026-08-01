@@ -107,6 +107,35 @@ Examples straight from the app:
 `enable_adaptive_head = 1` means the mower picks the direction itself;
 setting a custom `mow_head` requires `enable_adaptive_head = 0`.
 
+### `ctl_cutter` — a dead end, documented so nobody repeats it
+
+The M-series settings screen contains its own `publishCutterHeightCommand`,
+which sends `ctl_cutter` (payload passed straight through, 30 s timeout,
+failure message `strCuttingSettingFailed`) instead of `param_set`. That looks
+like the M-series has a separate cutting-height command, and the decompiler
+emits the modal's save handler as an empty body, so the payload shape cannot
+be read out of the bundle.
+
+**It is not needed.** Tested against an M5 (firmware 1.0.124):
+
+| Attempt | Result |
+| --- | --- |
+| `param_set` `{"cutter_height": 45}` | no effect |
+| `ctl_cutter` `45` | no effect |
+| `ctl_cutter` `{"cutter_height": 45}` | no effect |
+| `param_set` `{"mow_count": 2}` | applied |
+| `param_set` `{"cutter_height": 45, "mow_count": 1}` | applied |
+| `param_set` `{"cutter_height": 40}` | applied |
+
+The last row is the same payload as the first. The early failures were the
+mower not accepting commands at that moment — it reported `online: 0` — not a
+wrong command. `param_set` is the correct path for cutting height on the
+M-series too.
+
+The wider lesson: a command that appears to do nothing is not evidence that
+the payload is wrong. Re-test before concluding, and prefer leaving a command
+unimplemented over hardcoding a guess.
+
 ## `nest_param_set` — base-station ("nest") mowing
 
 Partial update, keys are **unprefixed** here even though the property shadow
