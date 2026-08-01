@@ -152,21 +152,69 @@
         "name": "Wysokość koszenia"
       },
       "voice_volume_setting": {
-        "name": "Głośność komunikatów"
+        "name": "Głośność"
       },
       "custom_mowing_direction_setting": {
-        "name": "Niestandardowy kierunek koszenia"
+        "name": "Kierunek koszenia"
       },
       "rain_continue_time_setting": {
-        "name": "Czas opóźnienia po deszczu"
+        "name": "Czas oczekiwania po deszczu"
+      },
+      "anti_loss_radius_setting": {
+        "name": "Promień zabezpieczenia"
+      },
+      "base_station_mow_count_setting": {
+        "name": "Liczba koszeń przy stacji bazowej"
+      },
+      "base_station_mow_height_setting": {
+        "name": "Wysokość koszenia przy stacji bazowej"
       }
     },
     "switch": {
       "custom_mowing_direction_enabled": {
-        "name": "Status niestandardowego kierunku koszenia"
+        "name": "Własny kierunek koszenia"
       },
       "rain_perception_enabled": {
         "name": "Wykrywanie deszczu"
+      },
+      "camera_enabled": {
+        "name": "Kamera"
+      },
+      "obstacle_avoidance_enabled": {
+        "name": "Wykrywanie przeszkód"
+      },
+      "anti_theft_enabled": {
+        "name": "Zabezpieczenie przed kradzieżą"
+      },
+      "indoor_mode_enabled": {
+        "name": "Tryb wewnętrzny"
+      },
+      "diagnostics_logging_enabled": {
+        "name": "Rejestrowanie diagnostyczne"
+      },
+      "base_station_mowing_enabled": {
+        "name": "Koszenie przy stacji bazowej"
+      },
+      "base_station_visual_inspection_enabled": {
+        "name": "Wykrywanie przeszkód przy stacji bazowej"
+      }
+    },
+    "select": {
+      "obstacle_avoidance_level": {
+        "name": "Poziom wykrywania przeszkód",
+        "state": {
+          "low": "Niski",
+          "medium": "Średni",
+          "high": "Wysoki"
+        }
+      },
+      "base_station_visual_inspection_level": {
+        "name": "Poziom przy stacji bazowej",
+        "state": {
+          "low": "Niski",
+          "medium": "Średni",
+          "high": "Wysoki"
+        }
       }
     }
   }

@@ -181,17 +181,42 @@ The integration also creates control entities on each mower device page:
 - Buttons: `Start full mow`, `Stop mow`, `Return to dock`
 - Buttons: one `Zone <name>` per manual zone
 - Buttons: one `Auto zone <name>` per auto-zone
-- Number controls (sliders): `Mow height`, `Voice volume`
-- Number control (slider): `Custom mowing direction` (0..180)
-- Number control (slider): `Rain continue time` (0..8 hours)
-- Number controls (sliders): `Base station mow count` (1..2), `Base station mow height` (30..70 mm)
-- Select: `Base station visual inspection level` (`Low`, `Medium`, `High`)
-- Switch: `Custom mowing direction enabled`
-- Switch: `Rain perception`
-- Switches: `Base station mowing`, `Base station visual inspection`
+- Number controls (sliders): `Cutting height` (30..70 mm), `Volume` (0..100 %)
+- Number control (slider): `Mowing direction` (0..180°)
+- Number control (slider): `Rain delay` (0..12 hours)
+- Number control (slider): `Anti-theft radius` (1..100 m)
+- Number controls (sliders): `Base station mow count` (1..2), `Base station cutting height` (30..70 mm)
+- Selects: `Obstacle avoidance level`, `Base station obstacle avoidance level` (`Low`, `Medium`, `High`)
+- Switches: `Rain detection`, `Camera`, `Obstacle avoidance`, `Anti-theft protection`, `Indoor mode`, `Diagnostics logging`
+- Switch: `Custom mowing direction`
+- Switches: `Base station mowing`, `Base station obstacle avoidance`
 - Sensors: `Zones`, `Auto zones` with zone ids/names summaries
 
 You can trigger/test commands directly from those entities in the device page.
+
+Settings entities show as **unavailable** when the mower does not report that
+setting, rather than sitting at `unknown` forever. Which settings exist differs
+per model — a Genie 600 has no base-station ("nest") settings, an M5 has no
+`nest_param_set` unless a base station is paired.
+
+### How settings are written
+
+The write path follows what the official app does, per
+[`PROTOCOL.md`](PROTOCOL.md):
+
+- Mowers that report a `device_config` object (M-series) get a single
+  `device_config` command with a partial update — this is what the app's own
+  settings screen sends.
+- Older Genie firmware gets the per-setting commands (`volume_ctl`,
+  `ctl_rainer`, `indoor_switch`, …), each with its own payload shape.
+- Mowing parameters go out as a partial `param_set` update on both.
+
+The choice is made from what the mower actually reports, not from its model
+name, because the app itself never branches on model.
+
+If a setting occasionally does not take effect, the mower was most likely not
+accepting commands at that moment (it reports `online: 0` when asleep). Simply
+try again — this is a device state, not an integration bug.
 
 ## Community contributions
 

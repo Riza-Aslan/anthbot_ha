@@ -481,6 +481,8 @@ class AnthbotShadowApiClient:
         self._iot_endpoint = self._normalize_endpoint(iot_endpoint)
         self._temporary_credentials: AnthbotTemporaryIotCredentials | None = None
         self._temporary_credentials_expires_at = 0.0
+        # None = not probed yet, True/False = probe result.
+        self._service_shadow_readable: bool | None = None
         if iot_credentials is not None:
             self.set_temporary_credentials(iot_credentials)
         endpoint_region = self._guess_region_from_endpoint(self._iot_endpoint)
@@ -786,13 +788,28 @@ class AnthbotShadowApiClient:
         return await self._async_get_named_shadow_reported_state("property")
 
     async def async_get_service_reported_state(self) -> dict[str, Any]:
-        """Fetch service shadow and return state.reported."""
-        # M5/M9 devices use the property shadow instead of service shadow
-        # since they don't have access to the service named shadow
-        is_m_series = self._device_model and ("M5" in str(self._device_model).upper() or "M9" in str(self._device_model).upper())
-        if is_m_series:
-            return await self._async_get_named_shadow_reported_state("property")
-        return await self._async_get_named_shadow_reported_state("service")
+        """Fetch service shadow and return state.reported.
+
+        Not every device grants read access to the service shadow; some answer
+        403 no matter how the request is signed. Rather than hardcoding model
+        names, probe once and remember the outcome for this client.
+        """
+        if self._service_shadow_readable is False:
+            return {}
+        try:
+            reported = await self._async_get_named_shadow_reported_state("service")
+        except AnthbotGenieApiError as err:
+            if self._service_shadow_readable is None:
+                self._service_shadow_readable = False
+                _LOGGER.debug(
+                    "Anthbot service shadow not readable for %s (%s); "
+                    "relying on the property shadow only",
+                    self._serial_number,
+                    err,
+                )
+            return {}
+        self._service_shadow_readable = True
+        return reported
 
     async def _async_signed_post(
         self,
@@ -900,46 +917,19 @@ class AnthbotShadowApiClient:
             raise AnthbotGenieApiError("Request timed out") from err
 
     async def async_publish_service_command(self, *, cmd: str, data: Any) -> None:
-        """Publish a service command to the mower service shadow topic."""
-        # Determine topic and payload based on device model
-        is_m_series = self._device_model and ("M5" in str(self._device_model).upper() or "M9" in str(self._device_model).upper())
-        
-        if self._device_model in ["M5", "M9"] or is_m_series:
-            # Für M5/M9 nutzen wir den service-Shadow, aber verpacken die neuen Variablen
-            # innerhalb eines data-Objekts, analog zur Legacy-Logik, damit der Mäher reagiert.
-            topic = f"$aws/things/{self._serial_number}/shadow/name/service/update"
-            
-            desired_data = {}
-            if cmd == "param_set":
-                if isinstance(data, dict):
-                    val = data.get('mow_head') or data.get('value') or data.get('cutter_ctl_cutter_lift') or list(data.values())[0]
-                else:
-                    val = data
-                desired_data["cutter_ctl_cutter_lift"] = int(val)
+        """Publish a service command to the mower service shadow topic.
 
-            elif cmd == "volume_ctl":
-                if isinstance(data, dict):
-                    val = data.get('volume') or data.get('volume_ctl') or data.get('value') or list(data.values())[0]
-                else:
-                    val = data
-                desired_data["volume_ctl"] = int(val)
+        The payload is exactly what the Anthbot app's ``publishDeviceCommand``
+        sends, for every device model:
 
-            else:
-                desired_data = data if isinstance(data, dict) else {cmd: data}
+            {"state": {"desired": {"cmd": <cmd>, "data": <data>}}}
 
-            body = {
-                "state": {
-                    "desired": {
-                        "cmd": cmd,
-                        "data": desired_data
-                    }
-                }
-            }
-        else:
-            # Legacy-Logik für ältere Modelle (Genie 600) bleibt unberührt
-            topic = f"$aws/things/{self._serial_number}/shadow/name/service/update"
-            body = {"state": {"desired": {"cmd": cmd, "data": data}}}
-        
+        The app applies no model-specific rewriting of the command name or of
+        the payload, and adds no timestamp. See PROTOCOL.md.
+        """
+        topic = f"$aws/things/{self._serial_number}/shadow/name/service/update"
+        body = {"state": {"desired": {"cmd": cmd, "data": data}}}
+
         payload_bytes = json.dumps(body, separators=(",", ":")).encode("utf-8")
         
         request_uri_encoded = "/topics/" + quote(topic, safe="-_.~")

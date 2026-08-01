@@ -149,41 +149,72 @@
     },
     "number": {
       "mow_height_setting": {
-        "name": "Mow height"
+        "name": "Cutting height"
       },
       "voice_volume_setting": {
-        "name": "Voice volume"
+        "name": "Volume"
       },
       "custom_mowing_direction_setting": {
-        "name": "Custom mowing direction"
+        "name": "Mowing direction"
       },
       "rain_continue_time_setting": {
-        "name": "Rain continue time"
+        "name": "Rain delay"
       },
       "base_station_mow_count_setting": {
         "name": "Base station mow count"
       },
       "base_station_mow_height_setting": {
-        "name": "Base station mow height"
+        "name": "Base station cutting height"
+      },
+      "anti_loss_radius_setting": {
+        "name": "Anti-theft radius"
       }
     },
     "select": {
       "base_station_visual_inspection_level": {
-        "name": "Base station visual inspection level"
+        "name": "Base station obstacle avoidance level",
+        "state": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        }
+      },
+      "obstacle_avoidance_level": {
+        "name": "Obstacle avoidance level",
+        "state": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        }
       }
     },
     "switch": {
       "custom_mowing_direction_enabled": {
-        "name": "Custom mowing direction enabled"
+        "name": "Custom mowing direction"
       },
       "rain_perception_enabled": {
-        "name": "Rain perception"
+        "name": "Rain detection"
       },
       "base_station_mowing_enabled": {
         "name": "Base station mowing"
       },
       "base_station_visual_inspection_enabled": {
-        "name": "Base station visual inspection"
+        "name": "Base station obstacle avoidance"
+      },
+      "camera_enabled": {
+        "name": "Camera"
+      },
+      "obstacle_avoidance_enabled": {
+        "name": "Obstacle avoidance"
+      },
+      "anti_theft_enabled": {
+        "name": "Anti-theft protection"
+      },
+      "indoor_mode_enabled": {
+        "name": "Indoor mode"
+      },
+      "diagnostics_logging_enabled": {
+        "name": "Diagnostics logging"
       }
     }
   }

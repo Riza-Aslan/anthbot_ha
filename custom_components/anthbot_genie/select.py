@@ -1,24 +1,30 @@
-"""Select platform for Anthbot Genie settings."""
+"""Select platform for Anthbot settings."""
 
 from __future__ import annotations
 
-import asyncio
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import AnthbotGenieDataUpdateCoordinator
-from .mow_params import (
-    NEST_VISUAL_INSPECTION_OPTIONS,
-    build_nest_mow_params_payload,
-    nest_visual_inspection_level_from_option,
-    nest_visual_inspection_option_from_state,
+from .entity import AnthbotSettingEntity
+from .settings import (
+    OBSTACLE_LEVEL_OPTIONS,
+    Command,
+    build_device_config_command,
+    build_nest_param_set_command,
+    coerce_int,
+    device_config_value,
+    nest_param_value,
+    obstacle_level_to_option,
+    obstacle_option_to_level,
 )
 
 
@@ -26,13 +32,44 @@ from .mow_params import (
 class AnthbotSelectDescription(SelectEntityDescription):
     """Describes an Anthbot select setting."""
 
+    value_fn: Callable[[dict[str, Any]], str | None]
+    command_fn: Callable[[dict[str, Any], str], Command]
+    supported_fn: Callable[[dict[str, Any]], bool]
+
 
 SELECTS: tuple[AnthbotSelectDescription, ...] = (
     AnthbotSelectDescription(
+        key="obstacle_avoidance_level",
+        translation_key="obstacle_avoidance_level",
+        name="Obstacle avoidance level",
+        icon="mdi:eye-settings",
+        options=list(OBSTACLE_LEVEL_OPTIONS),
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda state: obstacle_level_to_option(
+            coerce_int(device_config_value(state, "pobctl_level"))
+        ),
+        command_fn=lambda state, option: build_device_config_command(
+            state, pobctl_level=obstacle_option_to_level(option)
+        ),
+        supported_fn=lambda state: device_config_value(state, "pobctl_level")
+        is not None,
+    ),
+    # Key kept as base_station_visual_inspection_level so existing entity IDs
+    # survive.
+    AnthbotSelectDescription(
         key="base_station_visual_inspection_level",
         translation_key="base_station_visual_inspection_level",
-        name="Base station visual inspection level",
-        options=list(NEST_VISUAL_INSPECTION_OPTIONS),
+        name="Base station obstacle avoidance level",
+        icon="mdi:eye-settings",
+        options=list(OBSTACLE_LEVEL_OPTIONS),
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda state: obstacle_level_to_option(
+            coerce_int(nest_param_value(state, "pobctl_level"))
+        ),
+        command_fn=lambda state, option: build_nest_param_set_command(
+            pobctl_level=obstacle_option_to_level(option)
+        ),
+        supported_fn=lambda state: nest_param_value(state, "pobctl_level") is not None,
     ),
 )
 
@@ -53,45 +90,25 @@ async def async_setup_entry(
     )
 
 
-class AnthbotSelectEntity(
-    CoordinatorEntity[AnthbotGenieDataUpdateCoordinator], SelectEntity
-):
+class AnthbotSelectEntity(AnthbotSettingEntity, SelectEntity):
     """Anthbot select entity."""
 
     entity_description: AnthbotSelectDescription
-    _attr_has_entity_name = True
 
-    def __init__(
-        self,
-        coordinator: AnthbotGenieDataUpdateCoordinator,
-        description: AnthbotSelectDescription,
-    ) -> None:
-        super().__init__(coordinator)
-        self.entity_description = description
-        self._attr_unique_id = (
-            f"{coordinator.client.serial_number}_{self.entity_description.key}"
-        )
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.client.serial_number)},
-            manufacturer="Anthbot",
-            model=coordinator.device.model,
-            name=coordinator.device.alias,
+    @property
+    def available(self) -> bool:
+        """Return whether this mower reports the setting."""
+        return super().available and self.entity_description.supported_fn(
+            self.mower_state
         )
 
     @property
     def current_option(self) -> str | None:
         """Return the selected option."""
-        return nest_visual_inspection_option_from_state(self.coordinator.reported_state)
+        return self.entity_description.value_fn(self.mower_state)
 
     async def async_select_option(self, option: str) -> None:
-        """Update the selected option."""
-        await self.coordinator.client.async_publish_service_command(
-            cmd="set_mow_params",
-            data=build_nest_mow_params_payload(
-                self.coordinator.reported_state,
-                nest_pobctl_level=nest_visual_inspection_level_from_option(option),
-            ),
+        """Write the setting to the mower."""
+        await self.async_apply(
+            self.entity_description.command_fn(self.mower_state, option)
         )
-        await self.coordinator.client.async_request_all_properties()
-        await asyncio.sleep(1)
-        await self.coordinator.async_request_refresh()
