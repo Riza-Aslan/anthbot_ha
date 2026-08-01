@@ -213,11 +213,18 @@ def render_svg(
     position: Point | None = None,
     width: int = 900,
     padding: int = 300,
+    max_aspect: float = 1.6,
 ) -> str:
     """Render the map as an SVG document.
 
     Device coordinates have y pointing up; SVG has it pointing down, so y is
     mirrored. Stroke widths are in millimetres because the viewBox is.
+
+    A long, narrow garden would otherwise produce an extremely tall image that
+    dominates a dashboard — a 3.4 x 10.9 m lawn is a 1:2.8 strip, over 1900 px
+    tall in a full-width card. ``max_aspect`` bounds the ratio in either
+    direction by widening the short side of the view box, which pads the
+    drawing with background instead of distorting it.
     """
     area = mower_map.area_definition
     zones = _polygons(area, "custom_areas")
@@ -247,6 +254,15 @@ def render_svg(
     min_x, max_x = min(xs) - padding, max(xs) + padding
     min_y, max_y = min(ys) - padding, max(ys) + padding
     box_w, box_h = max_x - min_x, max_y - min_y
+
+    if max_aspect > 0 and box_w > 0 and box_h > 0:
+        if box_h / box_w > max_aspect:
+            grow = (box_h / max_aspect - box_w) / 2
+            min_x, max_x = min_x - grow, max_x + grow
+        elif box_w / box_h > max_aspect:
+            grow = (box_w / max_aspect - box_h) / 2
+            min_y, max_y = min_y - grow, max_y + grow
+        box_w, box_h = max_x - min_x, max_y - min_y
 
     def place(point: Point) -> str:
         return f"{point[0] - min_x:.0f},{max_y - point[1]:.0f}"
