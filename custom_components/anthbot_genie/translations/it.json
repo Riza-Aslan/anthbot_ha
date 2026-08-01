@@ -152,38 +152,69 @@
         "name": "Altezza di taglio"
       },
       "voice_volume_setting": {
-        "name": "Volume voce"
+        "name": "Volume"
       },
       "custom_mowing_direction_setting": {
-        "name": "Direzione di taglio personalizzata"
+        "name": "Direzione di taglio"
       },
       "rain_continue_time_setting": {
-        "name": "Tempo di attesa pioggia"
+        "name": "Attesa pioggia"
       },
       "base_station_mow_count_setting": {
-        "name": "Passaggi vicino alla base"
+        "name": "Cicli di taglio alla stazione base"
       },
       "base_station_mow_height_setting": {
-        "name": "Altezza di taglio vicino alla base"
+        "name": "Altezza di taglio alla stazione base"
+      },
+      "anti_loss_radius_setting": {
+        "name": "Raggio antifurto"
       }
     },
     "select": {
       "base_station_visual_inspection_level": {
-        "name": "Livello di ispezione visiva vicino alla base"
+        "name": "Livello alla stazione base",
+        "state": {
+          "low": "Basso",
+          "medium": "Medio",
+          "high": "Alto"
+        }
+      },
+      "obstacle_avoidance_level": {
+        "name": "Livello di rilevamento ostacoli",
+        "state": {
+          "low": "Basso",
+          "medium": "Medio",
+          "high": "Alto"
+        }
       }
     },
     "switch": {
       "custom_mowing_direction_enabled": {
-        "name": "Direzione di taglio personalizzata attiva"
+        "name": "Direzione di taglio personalizzata"
       },
       "rain_perception_enabled": {
         "name": "Rilevamento pioggia"
       },
       "base_station_mowing_enabled": {
-        "name": "Taglio vicino alla base"
+        "name": "Taglio alla stazione base"
       },
       "base_station_visual_inspection_enabled": {
-        "name": "Ispezione visiva vicino alla base"
+        "name": "Rilevamento ostacoli alla stazione base"
+      },
+      "camera_enabled": {
+        "name": "Fotocamera"
+      },
+      "obstacle_avoidance_enabled": {
+        "name": "Rilevamento ostacoli"
+      },
+      "anti_theft_enabled": {
+        "name": "Protezione antifurto"
+      },
+      "indoor_mode_enabled": {
+        "name": "Modalità interna"
+      },
+      "diagnostics_logging_enabled": {
+        "name": "Registrazione diagnostica"
       }
     }
   }

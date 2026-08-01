@@ -1,26 +1,33 @@
-"""Switch platform for Anthbot Genie settings."""
+"""Switch platform for Anthbot settings."""
 
 from __future__ import annotations
 
-import asyncio
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
-from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
+from homeassistant.components.switch import (
+    SwitchEntity,
+    SwitchEntityDescription,
+)
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .api import AnthbotGenieApiError
 from .const import DOMAIN
 from .coordinator import AnthbotGenieDataUpdateCoordinator
-from .mow_params import (
-    build_nest_mow_params_payload,
-    coerce_enabled_value,
-    custom_direction_enabled_from_state,
-    nest_mowing_enabled_from_state,
-    nest_visual_inspection_enabled_from_state,
+from .entity import AnthbotSettingEntity
+from .settings import (
+    Command,
+    build_device_config_command,
+    build_nest_param_set_command,
+    build_param_set_command,
+    coerce_bool,
+    device_config_value,
+    has_device_config_value,
+    nest_param_value,
+    param_set_value,
 )
 
 
@@ -28,27 +35,125 @@ from .mow_params import (
 class AnthbotSwitchDescription(SwitchEntityDescription):
     """Describes an Anthbot switch setting."""
 
+    # Reads the current value out of the reported state.
+    value_fn: Callable[[dict[str, Any]], bool]
+    # Builds the command that writes the new value.
+    command_fn: Callable[[dict[str, Any], bool], Command]
+    # Whether the mower reports this setting at all.
+    supported_fn: Callable[[dict[str, Any]], bool]
+
+
+def _device_config_switch(
+    key: str,
+    *,
+    translation_key: str,
+    name: str,
+    icon: str | None = None,
+    entity_category: EntityCategory | None = EntityCategory.CONFIG,
+    invert: bool = False,
+) -> AnthbotSwitchDescription:
+    """Build a switch backed by a device_config key."""
+
+    def value_fn(state: dict[str, Any]) -> bool:
+        raw = coerce_bool(device_config_value(state, key))
+        return not raw if invert else raw
+
+    def command_fn(state: dict[str, Any], enabled: bool) -> Command:
+        target = (not enabled) if invert else enabled
+        return build_device_config_command(state, **{key: int(target)})
+
+    return AnthbotSwitchDescription(
+        key=translation_key,
+        translation_key=translation_key,
+        name=name,
+        icon=icon,
+        entity_category=entity_category,
+        value_fn=value_fn,
+        command_fn=command_fn,
+        supported_fn=lambda state: has_device_config_value(state, key),
+    )
+
 
 SWITCHES: tuple[AnthbotSwitchDescription, ...] = (
+    # Key kept as rain_perception_enabled so existing entity IDs survive.
+    _device_config_switch(
+        "rain_switch",
+        translation_key="rain_perception_enabled",
+        name="Rain detection",
+        icon="mdi:weather-rainy",
+    ),
+    _device_config_switch(
+        "camera_switch",
+        translation_key="camera_enabled",
+        name="Camera",
+        icon="mdi:camera",
+    ),
+    _device_config_switch(
+        "pobctl_switch",
+        translation_key="obstacle_avoidance_enabled",
+        name="Obstacle avoidance",
+        icon="mdi:eye",
+    ),
+    _device_config_switch(
+        "anti_loss_switch",
+        translation_key="anti_theft_enabled",
+        name="Anti-theft protection",
+        icon="mdi:shield-lock",
+    ),
+    _device_config_switch(
+        "indoor_switch",
+        translation_key="indoor_mode_enabled",
+        name="Indoor mode",
+        icon="mdi:home",
+    ),
+    _device_config_switch(
+        "log_switch",
+        translation_key="diagnostics_logging_enabled",
+        name="Diagnostics logging",
+        icon="mdi:file-document-outline",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    # enable_adaptive_head = 1 means the mower chooses the mowing direction.
+    # Exposed the other way round so "on" means the user's angle is used.
     AnthbotSwitchDescription(
         key="custom_mowing_direction_enabled",
         translation_key="custom_mowing_direction_enabled",
-        name="Custom mowing direction enabled",
-    ),
-    AnthbotSwitchDescription(
-        key="rain_perception_enabled",
-        translation_key="rain_perception_enabled",
-        name="Rain perception",
+        name="Custom mowing direction",
+        icon="mdi:compass",
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda state: not coerce_bool(
+            param_set_value(state, "enable_adaptive_head")
+        ),
+        command_fn=lambda state, enabled: build_param_set_command(
+            enable_adaptive_head=0 if enabled else 1
+        ),
+        supported_fn=lambda state: param_set_value(state, "enable_adaptive_head")
+        is not None,
     ),
     AnthbotSwitchDescription(
         key="base_station_mowing_enabled",
         translation_key="base_station_mowing_enabled",
         name="Base station mowing",
+        icon="mdi:home-import-outline",
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda state: coerce_bool(param_set_value(state, "nest_switch")),
+        command_fn=lambda state, enabled: build_param_set_command(
+            nest_switch=int(enabled)
+        ),
+        supported_fn=lambda state: param_set_value(state, "nest_switch") is not None,
     ),
     AnthbotSwitchDescription(
         key="base_station_visual_inspection_enabled",
         translation_key="base_station_visual_inspection_enabled",
-        name="Base station visual inspection",
+        name="Base station obstacle avoidance",
+        icon="mdi:eye",
+        entity_category=EntityCategory.CONFIG,
+        value_fn=lambda state: coerce_bool(nest_param_value(state, "pobctl_switch")),
+        command_fn=lambda state, enabled: build_nest_param_set_command(
+            pobctl_switch=int(enabled)
+        ),
+        supported_fn=lambda state: nest_param_value(state, "pobctl_switch")
+        is not None,
     ),
 )
 
@@ -69,139 +174,25 @@ async def async_setup_entry(
     )
 
 
-class AnthbotSwitchEntity(
-    CoordinatorEntity[AnthbotGenieDataUpdateCoordinator], SwitchEntity
-):
+class AnthbotSwitchEntity(AnthbotSettingEntity, SwitchEntity):
     """Anthbot switch entity."""
 
     entity_description: AnthbotSwitchDescription
-    _attr_has_entity_name = True
 
-    def __init__(
-        self,
-        coordinator: AnthbotGenieDataUpdateCoordinator,
-        description: AnthbotSwitchDescription,
-    ) -> None:
-        super().__init__(coordinator)
-        self.entity_description = description
-        self._attr_unique_id = (
-            f"{coordinator.client.serial_number}_{self.entity_description.key}"
-        )
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.client.serial_number)},
-            manufacturer="Anthbot",
-            model=coordinator.device.model,
-            name=coordinator.device.alias,
-        )
+    @property
+    def available(self) -> bool:
+        """Return whether this mower reports the setting."""
+        return super().available and self.entity_description.supported_fn(self.state)
 
     @property
     def is_on(self) -> bool:
-        """Return current switch value."""
-        state = self.coordinator.reported_state
-        if self.entity_description.key == "rain_perception_enabled":
-            return coerce_enabled_value(state.get("rain_switch"))
-        if self.entity_description.key == "base_station_mowing_enabled":
-            return nest_mowing_enabled_from_state(state)
-        if self.entity_description.key == "base_station_visual_inspection_enabled":
-            return nest_visual_inspection_enabled_from_state(state)
-        return custom_direction_enabled_from_state(state)
+        """Return the current setting value."""
+        return self.entity_description.value_fn(self.state)
 
-    async def _async_set_custom_direction_enabled(self, enabled: bool) -> None:
-        """Set custom mowing direction toggle."""
-        param_set = self.coordinator.reported_state.get("param_set")
-        mow_head = 0
-        if isinstance(param_set, dict):
-            value = param_set.get("mow_head")
-            if isinstance(value, int):
-                mow_head = value
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Enable the setting."""
+        await self.async_apply(self.entity_description.command_fn(self.state, True))
 
-        await self.coordinator.client.async_publish_service_command(
-            cmd="param_set",
-            data={
-                "mow_head": mow_head,
-                "enable_adaptive_head": 0 if enabled else 1,
-            },
-        )
-        await self.coordinator.client.async_request_all_properties()
-        await asyncio.sleep(1)
-        await self.coordinator.async_request_refresh()
-
-    async def _async_set_rain_perception_enabled(self, enabled: bool) -> None:
-        """Set rain perception toggle."""
-        target_value = 1 if enabled else 0
-        reported_continue_time = self.coordinator.reported_state.get("rain_continue_time")
-        continue_time = (
-            reported_continue_time
-            if isinstance(reported_continue_time, int) and reported_continue_time > 0
-            else 10800
-        )
-
-        await self.coordinator.client.async_publish_service_command(
-            cmd="ctl_rainer",
-            data={
-                "switch": target_value,
-                "continue_time": continue_time,
-            },
-        )
-        await self.coordinator.client.async_request_all_properties()
-        await asyncio.sleep(1)
-        await self.coordinator.async_request_refresh()
-
-        if self.is_on != enabled:
-            raise AnthbotGenieApiError(
-                "Rain perception command was accepted but the reported state did not change"
-            )
-
-    async def _async_set_base_station_mowing_enabled(self, enabled: bool) -> None:
-        """Set base-station mowing mode."""
-        await self.coordinator.client.async_publish_service_command(
-            cmd="set_mow_params",
-            data=build_nest_mow_params_payload(
-                self.coordinator.reported_state,
-                nest_switch=1 if enabled else 0,
-            ),
-        )
-        await self.coordinator.client.async_request_all_properties()
-        await asyncio.sleep(1)
-        await self.coordinator.async_request_refresh()
-
-    async def _async_set_base_station_visual_inspection_enabled(
-        self, enabled: bool
-    ) -> None:
-        """Set base-station visual inspection toggle."""
-        await self.coordinator.client.async_publish_service_command(
-            cmd="set_mow_params",
-            data=build_nest_mow_params_payload(
-                self.coordinator.reported_state,
-                nest_pobctl_switch=1 if enabled else 0,
-            ),
-        )
-        await self.coordinator.client.async_request_all_properties()
-        await asyncio.sleep(1)
-        await self.coordinator.async_request_refresh()
-
-    async def async_turn_on(self, **kwargs) -> None:
-        """Turn switch on."""
-        if self.entity_description.key == "rain_perception_enabled":
-            await self._async_set_rain_perception_enabled(True)
-            return
-        if self.entity_description.key == "base_station_mowing_enabled":
-            await self._async_set_base_station_mowing_enabled(True)
-            return
-        if self.entity_description.key == "base_station_visual_inspection_enabled":
-            await self._async_set_base_station_visual_inspection_enabled(True)
-            return
-        await self._async_set_custom_direction_enabled(True)
-
-    async def async_turn_off(self, **kwargs) -> None:
-        """Turn switch off."""
-        if self.entity_description.key == "rain_perception_enabled":
-            await self._async_set_rain_perception_enabled(False)
-            return
-        if self.entity_description.key == "base_station_mowing_enabled":
-            await self._async_set_base_station_mowing_enabled(False)
-            return
-        if self.entity_description.key == "base_station_visual_inspection_enabled":
-            await self._async_set_base_station_visual_inspection_enabled(False)
-            return
-        await self._async_set_custom_direction_enabled(False)
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Disable the setting."""
+        await self.async_apply(self.entity_description.command_fn(self.state, False))

@@ -155,7 +155,7 @@
         "name": "Lautstärke"
       },
       "custom_mowing_direction_setting": {
-        "name": "Benutzerdefinierte Mährichtung"
+        "name": "Mährichtung"
       },
       "rain_continue_time_setting": {
         "name": "Regen-Wartezeit"
@@ -165,16 +165,32 @@
       },
       "base_station_mow_height_setting": {
         "name": "Schnitthöhe an der Ladestation"
+      },
+      "anti_loss_radius_setting": {
+        "name": "Diebstahlschutz-Radius"
       }
     },
     "select": {
       "base_station_visual_inspection_level": {
-        "name": "Sichtprüfung an der Ladestation"
+        "name": "Hinderniserkennung an der Ladestation (Stufe)",
+        "state": {
+          "low": "Niedrig",
+          "medium": "Mittel",
+          "high": "Hoch"
+        }
+      },
+      "obstacle_avoidance_level": {
+        "name": "Stufe der Hinderniserkennung",
+        "state": {
+          "low": "Niedrig",
+          "medium": "Mittel",
+          "high": "Hoch"
+        }
       }
     },
     "switch": {
       "custom_mowing_direction_enabled": {
-        "name": "Benutzerdefinierte Mährichtung aktiviert"
+        "name": "Benutzerdefinierte Mährichtung"
       },
       "rain_perception_enabled": {
         "name": "Regenerkennung"
@@ -183,7 +199,22 @@
         "name": "Mähen an der Ladestation"
       },
       "base_station_visual_inspection_enabled": {
-        "name": "Sichtprüfung an der Ladestation"
+        "name": "Hinderniserkennung an der Ladestation"
+      },
+      "camera_enabled": {
+        "name": "Kamera"
+      },
+      "obstacle_avoidance_enabled": {
+        "name": "Hinderniserkennung"
+      },
+      "anti_theft_enabled": {
+        "name": "Diebstahlschutz"
+      },
+      "indoor_mode_enabled": {
+        "name": "Indoor-Modus"
+      },
+      "diagnostics_logging_enabled": {
+        "name": "Diagnoseprotokollierung"
       }
     }
   }

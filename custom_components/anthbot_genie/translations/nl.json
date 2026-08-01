@@ -149,41 +149,72 @@
     },
     "number": {
       "mow_height_setting": {
-        "name": "Maai hoogte"
+        "name": "Maaihoogte"
       },
       "voice_volume_setting": {
-        "name": "Stemvolume"
+        "name": "Volume"
       },
       "custom_mowing_direction_setting": {
-        "name": "Aangepaste maairichting"
+        "name": "Maairichting"
       },
       "rain_continue_time_setting": {
-        "name": "Regen wachttijd"
+        "name": "Regenwachttijd"
       },
       "base_station_mow_count_setting": {
-        "name": "Maaibeurten bij laadstation"
+        "name": "Maaibeurten bij het basisstation"
       },
       "base_station_mow_height_setting": {
-        "name": "Maai hoogte bij laadstation"
+        "name": "Maaihoogte bij het basisstation"
+      },
+      "anti_loss_radius_setting": {
+        "name": "Diefstalbeveiligingsradius"
       }
     },
     "select": {
       "base_station_visual_inspection_level": {
-        "name": "Visueel inspectieniveau bij laadstation"
+        "name": "Niveau bij het basisstation",
+        "state": {
+          "low": "Laag",
+          "medium": "Gemiddeld",
+          "high": "Hoog"
+        }
+      },
+      "obstacle_avoidance_level": {
+        "name": "Niveau obstakeldetectie",
+        "state": {
+          "low": "Laag",
+          "medium": "Gemiddeld",
+          "high": "Hoog"
+        }
       }
     },
     "switch": {
       "custom_mowing_direction_enabled": {
-        "name": "Aangepaste maairichting ingeschakeld"
+        "name": "Aangepaste maairichting"
       },
       "rain_perception_enabled": {
         "name": "Regendetectie"
       },
       "base_station_mowing_enabled": {
-        "name": "Maaien bij laadstation"
+        "name": "Maaien bij het basisstation"
       },
       "base_station_visual_inspection_enabled": {
-        "name": "Visuele inspectie bij laadstation"
+        "name": "Obstakeldetectie bij het basisstation"
+      },
+      "camera_enabled": {
+        "name": "Camera"
+      },
+      "obstacle_avoidance_enabled": {
+        "name": "Obstakeldetectie"
+      },
+      "anti_theft_enabled": {
+        "name": "Diefstalbeveiliging"
+      },
+      "indoor_mode_enabled": {
+        "name": "Binnenmodus"
+      },
+      "diagnostics_logging_enabled": {
+        "name": "Diagnostische logging"
       }
     }
   }
