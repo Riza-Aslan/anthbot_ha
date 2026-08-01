@@ -1,4 +1,10 @@
-"""Guard: our entity classes must not shadow Home Assistant Entity members."""
+"""Static guards for this integration.
+
+Catches mistakes that are valid Python (so linters stay quiet) but break at
+runtime inside Home Assistant. Run it before shipping:
+
+    python3 scripts/check_integration.py
+"""
 import sys, pathlib, ast
 
 PKG = pathlib.Path('/home/riza-aslan/DEV/Anthbot-HA/repo/custom_components/anthbot_genie')
@@ -30,8 +36,25 @@ for path in sorted(PKG.glob("*.py")):
             if item.name in RESERVED and item.name not in ALLOWED:
                 bad.append(f"{path.name}:{item.lineno} {cls.name}.{item.name} shadows HA Entity.{item.name}")
 
+# hass.services.async_register(domain, service, handler) takes exactly three
+# positional arguments. A stray extra one silently binds to `schema` and setup
+# dies with "got multiple values for argument 'schema'".
+for path in sorted(PKG.glob("*.py")):
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        if not (isinstance(func, ast.Attribute) and func.attr == "async_register"):
+            continue
+        if len(node.args) != 3:
+            bad.append(
+                f"{path.name}:{node.lineno} async_register() takes 3 positional "
+                f"args, got {len(node.args)}"
+            )
+
 if bad:
-    print("RESERVED-NAME COLLISIONS:")
+    print("PROBLEMS:")
     for b in bad: print("  " + b)
     sys.exit(1)
-print("OK: no reserved Entity names shadowed")
+print("OK: no reserved Entity names shadowed; service registrations well-formed")
