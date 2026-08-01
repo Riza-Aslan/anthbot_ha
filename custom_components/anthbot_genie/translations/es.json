@@ -152,38 +152,69 @@
         "name": "Altura de corte"
       },
       "voice_volume_setting": {
-        "name": "Volumen de voz"
+        "name": "Volumen"
       },
       "custom_mowing_direction_setting": {
-        "name": "Dirección de corte personalizada"
+        "name": "Dirección de corte"
       },
       "rain_continue_time_setting": {
-        "name": "Tiempo de espera por lluvia"
+        "name": "Espera por lluvia"
       },
       "base_station_mow_count_setting": {
-        "name": "Pasadas junto a la base"
+        "name": "Ciclos de corte en la estación base"
       },
       "base_station_mow_height_setting": {
-        "name": "Altura de corte junto a la base"
+        "name": "Altura de corte en la estación base"
+      },
+      "anti_loss_radius_setting": {
+        "name": "Radio antirrobo"
       }
     },
     "select": {
       "base_station_visual_inspection_level": {
-        "name": "Nivel de inspección visual junto a la base"
+        "name": "Nivel en la estación base",
+        "state": {
+          "low": "Bajo",
+          "medium": "Medio",
+          "high": "Alto"
+        }
+      },
+      "obstacle_avoidance_level": {
+        "name": "Nivel de detección de obstáculos",
+        "state": {
+          "low": "Bajo",
+          "medium": "Medio",
+          "high": "Alto"
+        }
       }
     },
     "switch": {
       "custom_mowing_direction_enabled": {
-        "name": "Dirección de corte personalizada activada"
+        "name": "Dirección de corte personalizada"
       },
       "rain_perception_enabled": {
         "name": "Detección de lluvia"
       },
       "base_station_mowing_enabled": {
-        "name": "Corte junto a la base"
+        "name": "Corte en la estación base"
       },
       "base_station_visual_inspection_enabled": {
-        "name": "Inspección visual junto a la base"
+        "name": "Detección de obstáculos en la estación base"
+      },
+      "camera_enabled": {
+        "name": "Cámara"
+      },
+      "obstacle_avoidance_enabled": {
+        "name": "Detección de obstáculos"
+      },
+      "anti_theft_enabled": {
+        "name": "Protección antirrobo"
+      },
+      "indoor_mode_enabled": {
+        "name": "Modo interior"
+      },
+      "diagnostics_logging_enabled": {
+        "name": "Registro de diagnóstico"
       }
     }
   }

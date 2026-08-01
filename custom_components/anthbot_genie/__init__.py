@@ -43,6 +43,7 @@ from .const import (
     SERVICE_STOP_MOW,
 )
 from .coordinator import AnthbotGenieDataUpdateCoordinator
+from .settings import build_device_config_command, build_param_set_command
 from .zones import auto_zones, manual_zones
 
 PLATFORMS = [
@@ -304,9 +305,11 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             raise AnthbotGenieApiError("No target Anthbot mower found")
         mow_height = int(service_call.data[ATTR_MOW_HEIGHT])
         for coordinator in targets:
+            # Send only the key being changed, as the app does. Including
+            # rid_switch here silently turned off ride-on mode as a side effect.
+            command = build_param_set_command(cutter_height=mow_height)
             await coordinator.client.async_publish_service_command(
-                cmd="param_set",
-                data={"cutter_height": mow_height, "rid_switch": 0},
+                cmd=command.cmd, data=command.data
             )
             await _async_sync_after_command(coordinator)
 
@@ -316,9 +319,13 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             raise AnthbotGenieApiError("No target Anthbot mower found")
         voice_volume = int(service_call.data[ATTR_VOICE_VOLUME])
         for coordinator in targets:
+            # device_config on M-series, volume_ctl on Genie — picked from what
+            # the mower actually reports.
+            command = build_device_config_command(
+                coordinator.reported_state, volume=voice_volume
+            )
             await coordinator.client.async_publish_service_command(
-                cmd="volume_ctl",
-                data={"volume": voice_volume},
+                cmd=command.cmd, data=command.data
             )
             await _async_sync_after_command(coordinator)
 
@@ -331,12 +338,12 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             service_call.data.get(ATTR_ENABLE_CUSTOM_DIRECTION, True)
         )
         for coordinator in targets:
+            command = build_param_set_command(
+                mow_head=mow_direction,
+                enable_adaptive_head=0 if enable_custom_direction else 1,
+            )
             await coordinator.client.async_publish_service_command(
-                cmd="param_set",
-                data={
-                    "mow_head": mow_direction,
-                    "enable_adaptive_head": 0 if enable_custom_direction else 1,
-                },
+                cmd=command.cmd, data=command.data
             )
             await _async_sync_after_command(coordinator)
 

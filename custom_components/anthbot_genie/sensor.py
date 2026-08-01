@@ -23,10 +23,13 @@ from .const import DOMAIN
 from .coordinator import AnthbotGenieDataUpdateCoordinator
 from .mow_params import (
     custom_direction_enabled_from_state,
+    nest_cutter_height_from_state,
+    nest_mow_count_from_state,
     nest_mowing_enabled_from_state,
     nest_visual_inspection_enabled_from_state,
     nest_visual_inspection_option_from_state,
-    raw_int_value,
+    rain_continue_time_from_state,
+    volume_from_state,
 )
 from .zones import active_manual_zone_ids, auto_zones, manual_zones
 
@@ -190,7 +193,7 @@ SENSORS: tuple[AnthbotSensorDescription, ...] = (
         name="Voice volume",
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: data.get("volume"),
+        value_fn=volume_from_state,
     ),
     AnthbotSensorDescription(
         key="cutting_height",
@@ -566,21 +569,21 @@ class AnthbotSensorEntity(
             else False
         )
         base_station_mowing_enabled = nest_mowing_enabled_from_state(state)
-        base_station_mow_count = raw_int_value(state.get("nest_mow_count"))
-        base_station_mow_height = raw_int_value(state.get("nest_cutter_height"))
+        base_station_mow_count = nest_mow_count_from_state(state)
+        base_station_mow_height = nest_cutter_height_from_state(state)
         base_station_visual_inspection_enabled = (
             nest_visual_inspection_enabled_from_state(state)
         )
         base_station_visual_inspection_level = (
             nest_visual_inspection_option_from_state(state)
         )
-        voice_volume = state.get("volume")
+        voice_volume = volume_from_state(state)
         voice_status = (
             state.get("voice_status")
             if isinstance(state.get("voice_status"), dict)
             else None
         )
-        rain_continue_time = state.get("rain_continue_time")
+        rain_continue_time = rain_continue_time_from_state(state)
         mower_status = _general_mower_status(state)
         robot_status_raw = _raw_robot_status(state)
         base_station_mowing_active = robot_status_raw == "nestmowing"

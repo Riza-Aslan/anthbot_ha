@@ -152,38 +152,69 @@
         "name": "Hauteur de coupe"
       },
       "voice_volume_setting": {
-        "name": "Volume vocal"
+        "name": "Volume"
       },
       "custom_mowing_direction_setting": {
-        "name": "Direction de tonte personnalisée"
+        "name": "Direction de tonte"
       },
       "rain_continue_time_setting": {
-        "name": "Temps d'attente pluie"
+        "name": "Délai de pluie"
       },
       "base_station_mow_count_setting": {
-        "name": "Passes près de la station"
+        "name": "Nombre de tontes à la station de base"
       },
       "base_station_mow_height_setting": {
-        "name": "Hauteur de coupe près de la station"
+        "name": "Hauteur de coupe à la station de base"
+      },
+      "anti_loss_radius_setting": {
+        "name": "Rayon antivol"
       }
     },
     "select": {
       "base_station_visual_inspection_level": {
-        "name": "Niveau d'inspection visuelle près de la station"
+        "name": "Niveau d'évitement à la station de base",
+        "state": {
+          "low": "Faible",
+          "medium": "Moyen",
+          "high": "Élevé"
+        }
+      },
+      "obstacle_avoidance_level": {
+        "name": "Niveau d'évitement d'obstacles",
+        "state": {
+          "low": "Faible",
+          "medium": "Moyen",
+          "high": "Élevé"
+        }
       }
     },
     "switch": {
       "custom_mowing_direction_enabled": {
-        "name": "Direction de tonte personnalisée activée"
+        "name": "Direction de tonte personnalisée"
       },
       "rain_perception_enabled": {
         "name": "Détection de pluie"
       },
       "base_station_mowing_enabled": {
-        "name": "Tonte près de la station"
+        "name": "Tonte à la station de base"
       },
       "base_station_visual_inspection_enabled": {
-        "name": "Inspection visuelle près de la station"
+        "name": "Évitement d'obstacles à la station de base"
+      },
+      "camera_enabled": {
+        "name": "Caméra"
+      },
+      "obstacle_avoidance_enabled": {
+        "name": "Évitement d'obstacles"
+      },
+      "anti_theft_enabled": {
+        "name": "Protection antivol"
+      },
+      "indoor_mode_enabled": {
+        "name": "Mode intérieur"
+      },
+      "diagnostics_logging_enabled": {
+        "name": "Journalisation de diagnostic"
       }
     }
   }
