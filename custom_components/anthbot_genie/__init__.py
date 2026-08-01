@@ -38,6 +38,7 @@ from .const import (
     SERVICE_SET_CUSTOM_MOWING_DIRECTION,
     SERVICE_SET_MOW_HEIGHT,
     SERVICE_SET_VOICE_VOLUME,
+    SERVICE_SEND_RAW_COMMAND,
     SERVICE_START_FULL_MOW,
     SERVICE_START_ZONE_MOW,
     SERVICE_STOP_MOW,
@@ -245,6 +246,18 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         },
         extra=vol.ALLOW_EXTRA,
     )
+    send_raw_command_schema = vol.Schema(
+        {
+            vol.Required("command"): cv.string,
+            # Anything the protocol allows: a scalar or an object.
+            vol.Required("payload"): vol.Any(
+                vol.Coerce(int), cv.string, dict, list, bool
+            ),
+            vol.Optional(ATTR_SERIAL_NUMBER): vol.Any(cv.string, [cv.string]),
+            vol.Optional("entity_id"): vol.Any(cv.entity_id, [cv.entity_id]),
+        },
+        extra=vol.ALLOW_EXTRA,
+    )
     zone_schema = vol.Schema(
         {
             vol.Required(ATTR_ZONES): vol.Any(
@@ -347,6 +360,31 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             )
             await _async_sync_after_command(coordinator)
 
+    async def _handle_send_raw_command(service_call) -> None:
+        """Publish an arbitrary service-shadow command.
+
+        Diagnostic escape hatch. The Anthbot protocol is reverse-engineered
+        (see PROTOCOL.md) and payload shapes differ per command, so this lets
+        a command be tried without changing code. Nothing in the integration
+        depends on it.
+        """
+        targets = _resolve_target_coordinators(hass, service_call.data)
+        if not targets:
+            raise AnthbotGenieApiError("No target Anthbot mower found")
+        command = service_call.data["command"]
+        payload = service_call.data["payload"]
+        for coordinator in targets:
+            _LOGGER.warning(
+                "Anthbot raw command for %s: cmd=%s data=%r",
+                coordinator.client.serial_number,
+                command,
+                payload,
+            )
+            await coordinator.client.async_publish_service_command(
+                cmd=command, data=payload
+            )
+            await _async_sync_after_command(coordinator)
+
     async def _handle_start_zone_mow(service_call) -> None:
         targets = _resolve_target_coordinators(hass, service_call.data)
         if not targets:
@@ -384,7 +422,8 @@ async def _async_register_services(hass: HomeAssistant) -> None:
     if not hass.services.has_service(DOMAIN, SERVICE_START_FULL_MOW):
         hass.services.async_register(
             DOMAIN,
-            SERVICE_START_FULL_MOW,
+            SERVICE_SEND_RAW_COMMAND,
+    SERVICE_START_FULL_MOW,
             _handle_start_full_mow,
             schema=base_schema,
         )
@@ -419,6 +458,13 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             SERVICE_SET_CUSTOM_MOWING_DIRECTION,
             _handle_set_custom_mowing_direction,
             schema=set_custom_mowing_direction_schema,
+        )
+    if not hass.services.has_service(DOMAIN, SERVICE_SEND_RAW_COMMAND):
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_SEND_RAW_COMMAND,
+            _handle_send_raw_command,
+            schema=send_raw_command_schema,
         )
     if not hass.services.has_service(DOMAIN, SERVICE_START_ZONE_MOW):
         hass.services.async_register(
@@ -617,7 +663,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN].pop(entry.entry_id)
         if not hass.data[DOMAIN]:
             for service_name in (
-                SERVICE_START_FULL_MOW,
+                SERVICE_SEND_RAW_COMMAND,
+    SERVICE_START_FULL_MOW,
                 SERVICE_STOP_MOW,
                 SERVICE_RETURN_TO_DOCK,
                 SERVICE_SET_MOW_HEIGHT,
