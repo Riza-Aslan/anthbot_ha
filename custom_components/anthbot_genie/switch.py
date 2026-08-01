@@ -182,17 +182,23 @@ class AnthbotSwitchEntity(AnthbotSettingEntity, SwitchEntity):
     @property
     def available(self) -> bool:
         """Return whether this mower reports the setting."""
-        return super().available and self.entity_description.supported_fn(self.state)
+        return super().available and self.entity_description.supported_fn(
+            self.mower_state
+        )
 
     @property
     def is_on(self) -> bool:
         """Return the current setting value."""
-        return self.entity_description.value_fn(self.state)
+        return self.entity_description.value_fn(self.mower_state)
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Enable the setting."""
-        await self.async_apply(self.entity_description.command_fn(self.state, True))
+        await self.async_apply(
+            self.entity_description.command_fn(self.mower_state, True)
+        )
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Disable the setting."""
-        await self.async_apply(self.entity_description.command_fn(self.state, False))
+        await self.async_apply(
+            self.entity_description.command_fn(self.mower_state, False)
+        )

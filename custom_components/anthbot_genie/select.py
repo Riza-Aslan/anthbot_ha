@@ -98,13 +98,17 @@ class AnthbotSelectEntity(AnthbotSettingEntity, SelectEntity):
     @property
     def available(self) -> bool:
         """Return whether this mower reports the setting."""
-        return super().available and self.entity_description.supported_fn(self.state)
+        return super().available and self.entity_description.supported_fn(
+            self.mower_state
+        )
 
     @property
     def current_option(self) -> str | None:
         """Return the selected option."""
-        return self.entity_description.value_fn(self.state)
+        return self.entity_description.value_fn(self.mower_state)
 
     async def async_select_option(self, option: str) -> None:
         """Write the setting to the mower."""
-        await self.async_apply(self.entity_description.command_fn(self.state, option))
+        await self.async_apply(
+            self.entity_description.command_fn(self.mower_state, option)
+        )
