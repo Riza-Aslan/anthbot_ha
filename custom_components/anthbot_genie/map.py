@@ -204,8 +204,10 @@ _STYLE = """<style>
   .zone   { fill: #f0afb8; fill-opacity: .45; stroke: #e2808d; stroke-width: 35;
             stroke-dasharray: 170 100; stroke-linecap: round }
   .forbid { fill: #ff8a8a; fill-opacity: .35; stroke: #e05c5c; stroke-width: 35 }
-  .bridge { fill: none; stroke: #aeb3c4; stroke-width: 90; stroke-linecap: round;
-            stroke-dasharray: 60 110 }
+  .bridge { fill: none; stroke: #c9cdd9; stroke-width: 150; stroke-linecap: round;
+            stroke-linejoin: round }
+  .bridgel{ fill: none; stroke: #f2f3f8; stroke-width: 34; stroke-linecap: butt;
+            stroke-dasharray: 90 90 }
   .track  { fill: none; stroke: #ffffff; stroke-opacity: .75; stroke-width: 60;
             stroke-linecap: round; stroke-linejoin: round }
   .mower  { fill: #ffffff; stroke: #2a2f7d; stroke-width: 55 }
@@ -213,7 +215,8 @@ _STYLE = """<style>
   @media (prefers-color-scheme: dark) {
     .bg     { fill: #191b2a }
     .lawn   { fill: #6f76d8; stroke: #8f96ee }
-    .bridge { stroke: #5b6070 }
+    .bridge { stroke: #4a4f63 }
+    .bridgel{ stroke: #9aa0b4 }
     .mower  { fill: #ffffff; stroke: #12142b }
     .mowerd { fill: #12142b }
   }
@@ -295,16 +298,21 @@ def render_svg(
         _STYLE,
         f'<rect class="bg" width="{box_w}" height="{box_h}"/>',
     ]
-    for points in mower_map.lawn:
-        parts.append(f'<polygon class="lawn" points="{ring(points)}"/>')
+    # Bridges and the travelled track go down first, so the lawn covers them
+    # where they overlap and only the parts crossing open ground show. Drawn on
+    # top they read as clutter lying over the grass.
     for points in mower_map.bridges:
         parts.append(f'<polyline class="bridge" points="{ring(points)}"/>')
+    for points in mower_map.bridges:
+        parts.append(f'<polyline class="bridgel" points="{ring(points)}"/>')
+    if path and len(path) >= 2:
+        parts.append(f'<polyline class="track" points="{ring(path)}"/>')
+    for points in mower_map.lawn:
+        parts.append(f'<polygon class="lawn" points="{ring(points)}"/>')
     for points in forbidden:
         parts.append(f'<polygon class="forbid" points="{ring(points)}"/>')
     for points in zones:
         parts.append(f'<polygon class="zone" points="{ring(points)}"/>')
-    if path and len(path) >= 2:
-        parts.append(f'<polyline class="track" points="{ring(path)}"/>')
     if position:
         cx, cy = position[0] - min_x, max_y - position[1]
         # Rounded square with a dot, echoing the app's mower marker.

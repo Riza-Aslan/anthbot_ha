@@ -26,7 +26,25 @@
   "entity": {
     "sensor": {
       "mower_status": {
-        "name": "Mower status"
+        "name": "Mower status",
+        "state": {
+          "standby": "Standby",
+          "paused": "Paused",
+          "charging": "Charging",
+          "mowing": "Mowing",
+          "returning_to_dock": "Returning to dock",
+          "mapping": "Mapping",
+          "positioning": "Positioning",
+          "resuming": "Resuming",
+          "sleeping": "Sleeping",
+          "ota_updating": "Updating",
+          "remote_control": "Remote control",
+          "factory_mode": "Factory mode",
+          "camera_cleaning": "Cleaning camera",
+          "going_to_target": "Going to target",
+          "shutdown": "Shut down",
+          "unknown": "Unknown"
+        }
       },
       "cutting_height": {
         "name": "Cutting height"
@@ -50,7 +68,29 @@
         "name": "Battery level"
       },
       "mode": {
-        "name": "Mode"
+        "name": "Mode",
+        "state": {
+          "idle": "Idle",
+          "pause": "Paused",
+          "charge": "Charging",
+          "sleep": "Sleeping",
+          "ota": "Updating",
+          "position": "Positioning",
+          "globalmowing": "Mowing everything",
+          "zonemowing": "Mowing zone",
+          "pointmowing": "Spot mowing",
+          "mapping": "Mapping",
+          "backtodock": "Returning to dock",
+          "resume_point": "Resuming",
+          "shutdown": "Shut down",
+          "remotectrl": "Remote control",
+          "factory": "Factory mode",
+          "camera_cleaning": "Cleaning camera",
+          "gototarget": "Going to target",
+          "bordermowing": "Mowing border",
+          "regionmowing": "Mowing region",
+          "nestmowing": "Mowing at station"
+        }
       },
       "error_code": {
         "name": "Error code"

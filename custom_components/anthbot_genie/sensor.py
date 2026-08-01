@@ -46,6 +46,19 @@ def _path_exists(data: dict[str, Any], *keys: str) -> bool:
     return True
 
 
+def _session_value(data: dict[str, Any], key: str) -> Any:
+    """Return a per-session counter, or 0 when the mower reports none.
+
+    Genie firmware reports mowing_time_new / mowing_area_new; the M-series has
+    no per-session counters at all. The Anthbot app shows 0 for those rather
+    than a blank, so an absent key means "nothing mowed this session".
+    """
+    raw = data.get(key)
+    if isinstance(raw, dict):
+        return raw.get("value")
+    return 0 if raw is None else None
+
+
 def _is_custom_mowing_direction_enabled(data: dict[str, Any]) -> bool:
     """Map raw enable_adaptive_head value to custom-direction state."""
     return custom_direction_enabled_from_state(data)
@@ -74,6 +87,21 @@ _ROBOT_STATUS_BY_CODE: tuple[str, ...] = (
     "regionmowing",
     "nestmowing",
 )
+
+# Raw device modes, kept as an enum so the frontend can translate them.
+# Anything outside this list reports as unknown rather than raising, because an
+# enum sensor returning an unlisted option is an error in Home Assistant.
+DEVICE_MODE_OPTIONS: list[str] = sorted(set(_ROBOT_STATUS_BY_CODE))
+
+
+def _device_mode(data: dict[str, Any]) -> str | None:
+    """Return the mower's raw mode if it is one we know how to label."""
+    mode = data.get("mode")
+    value = mode.get("value") if isinstance(mode, dict) else None
+    if isinstance(value, str) and value.lower() in DEVICE_MODE_OPTIONS:
+        return value.lower()
+    return None
+
 
 MOWER_STATUS_OPTIONS: list[str] = [
     "standby",
@@ -218,11 +246,7 @@ SENSORS: tuple[AnthbotSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfTime.SECONDS,
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: (
-            data.get("mowing_time_new", {}).get("value")
-            if isinstance(data.get("mowing_time_new"), dict)
-            else None
-        ),
+        value_fn=lambda data: _session_value(data, "mowing_time_new"),
     ),
     AnthbotSensorDescription(
         key="mowing_area",
@@ -231,11 +255,7 @@ SENSORS: tuple[AnthbotSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfArea.SQUARE_METERS,
         device_class=SensorDeviceClass.AREA,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda data: (
-            data.get("mowing_area_new", {}).get("value")
-            if isinstance(data.get("mowing_area_new"), dict)
-            else None
-        ),
+        value_fn=lambda data: _session_value(data, "mowing_area_new"),
     ),
     AnthbotSensorDescription(
         key="custom_mowing_direction",
@@ -289,11 +309,9 @@ SENSORS: tuple[AnthbotSensorDescription, ...] = (
         key="mode",
         translation_key="mode",
         name="Mode",
-        value_fn=lambda data: (
-            data.get("mode", {}).get("value")
-            if isinstance(data.get("mode"), dict)
-            else None
-        ),
+        device_class=SensorDeviceClass.ENUM,
+        options=DEVICE_MODE_OPTIONS,
+        value_fn=_device_mode,
     ),
     AnthbotSensorDescription(
         key="error_code",

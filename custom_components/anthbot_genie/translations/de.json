@@ -26,7 +26,25 @@
   "entity": {
     "sensor": {
       "mower_status": {
-        "name": "Mäherstatus"
+        "name": "Mäherstatus",
+        "state": {
+          "standby": "Bereit",
+          "paused": "Pausiert",
+          "charging": "Lädt",
+          "mowing": "Mäht",
+          "returning_to_dock": "Fährt zur Station",
+          "mapping": "Kartiert",
+          "positioning": "Positioniert",
+          "resuming": "Setzt fort",
+          "sleeping": "Schläft",
+          "ota_updating": "Aktualisiert",
+          "remote_control": "Fernsteuerung",
+          "factory_mode": "Werksmodus",
+          "camera_cleaning": "Kamerareinigung",
+          "going_to_target": "Fährt zum Ziel",
+          "shutdown": "Ausgeschaltet",
+          "unknown": "Unbekannt"
+        }
       },
       "cutting_height": {
         "name": "Schnitthöhe"
@@ -50,7 +68,29 @@
         "name": "Akkustand"
       },
       "mode": {
-        "name": "Modus"
+        "name": "Modus",
+        "state": {
+          "idle": "Bereit",
+          "pause": "Pausiert",
+          "charge": "Lädt",
+          "sleep": "Schläft",
+          "ota": "Aktualisiert",
+          "position": "Positioniert",
+          "globalmowing": "Mäht alles",
+          "zonemowing": "Mäht Zone",
+          "pointmowing": "Punktmähen",
+          "mapping": "Kartiert",
+          "backtodock": "Fährt zur Station",
+          "resume_point": "Setzt fort",
+          "shutdown": "Ausgeschaltet",
+          "remotectrl": "Fernsteuerung",
+          "factory": "Werksmodus",
+          "camera_cleaning": "Kamerareinigung",
+          "gototarget": "Fährt zum Ziel",
+          "bordermowing": "Mäht Rand",
+          "regionmowing": "Mäht Bereich",
+          "nestmowing": "Mäht an der Station"
+        }
       },
       "error_code": {
         "name": "Fehlercode"

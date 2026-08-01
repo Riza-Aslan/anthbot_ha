@@ -26,7 +26,25 @@
   "entity": {
     "sensor": {
       "mower_status": {
-        "name": "État de la tondeuse"
+        "name": "État de la tondeuse",
+        "state": {
+          "standby": "En attente",
+          "paused": "En pause",
+          "charging": "En charge",
+          "mowing": "Tond",
+          "returning_to_dock": "Retour à la base",
+          "mapping": "Cartographie",
+          "positioning": "Positionnement",
+          "resuming": "Reprise",
+          "sleeping": "En veille",
+          "ota_updating": "Mise à jour",
+          "remote_control": "Télécommande",
+          "factory_mode": "Mode usine",
+          "camera_cleaning": "Nettoyage caméra",
+          "going_to_target": "Va vers la cible",
+          "shutdown": "Éteint",
+          "unknown": "Inconnu"
+        }
       },
       "cutting_height": {
         "name": "Hauteur de coupe"
@@ -50,7 +68,29 @@
         "name": "Niveau de batterie"
       },
       "mode": {
-        "name": "Mode"
+        "name": "Mode",
+        "state": {
+          "idle": "Inactif",
+          "pause": "En pause",
+          "charge": "En charge",
+          "sleep": "En veille",
+          "ota": "Mise à jour",
+          "position": "Positionnement",
+          "globalmowing": "Tond tout",
+          "zonemowing": "Tond la zone",
+          "pointmowing": "Tonte ponctuelle",
+          "mapping": "Cartographie",
+          "backtodock": "Retour à la base",
+          "resume_point": "Reprise",
+          "shutdown": "Éteint",
+          "remotectrl": "Télécommande",
+          "factory": "Mode usine",
+          "camera_cleaning": "Nettoyage caméra",
+          "gototarget": "Va vers la cible",
+          "bordermowing": "Tond la bordure",
+          "regionmowing": "Tond la région",
+          "nestmowing": "Tond à la base"
+        }
       },
       "error_code": {
         "name": "Code d'erreur"

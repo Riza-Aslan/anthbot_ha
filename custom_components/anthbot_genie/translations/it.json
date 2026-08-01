@@ -26,7 +26,25 @@
   "entity": {
     "sensor": {
       "mower_status": {
-        "name": "Stato del rasaerba"
+        "name": "Stato del rasaerba",
+        "state": {
+          "standby": "In attesa",
+          "paused": "In pausa",
+          "charging": "In carica",
+          "mowing": "Taglia",
+          "returning_to_dock": "Rientro alla base",
+          "mapping": "Mappatura",
+          "positioning": "Posizionamento",
+          "resuming": "Ripresa",
+          "sleeping": "In pausa prolungata",
+          "ota_updating": "Aggiornamento",
+          "remote_control": "Controllo remoto",
+          "factory_mode": "Modalità fabbrica",
+          "camera_cleaning": "Pulizia fotocamera",
+          "going_to_target": "Verso il punto",
+          "shutdown": "Spento",
+          "unknown": "Sconosciuto"
+        }
       },
       "cutting_height": {
         "name": "Altezza di taglio"
@@ -50,7 +68,29 @@
         "name": "Livello batteria"
       },
       "mode": {
-        "name": "Modalità"
+        "name": "Modalità",
+        "state": {
+          "idle": "Inattivo",
+          "pause": "In pausa",
+          "charge": "In carica",
+          "sleep": "In riposo",
+          "ota": "Aggiornamento",
+          "position": "Posizionamento",
+          "globalmowing": "Taglia tutto",
+          "zonemowing": "Taglia la zona",
+          "pointmowing": "Taglio puntuale",
+          "mapping": "Mappatura",
+          "backtodock": "Rientro alla base",
+          "resume_point": "Ripresa",
+          "shutdown": "Spento",
+          "remotectrl": "Controllo remoto",
+          "factory": "Modalità fabbrica",
+          "camera_cleaning": "Pulizia fotocamera",
+          "gototarget": "Verso il punto",
+          "bordermowing": "Taglia il bordo",
+          "regionmowing": "Taglia la regione",
+          "nestmowing": "Taglia alla base"
+        }
       },
       "error_code": {
         "name": "Codice errore"

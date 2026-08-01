@@ -26,7 +26,25 @@
   "entity": {
     "sensor": {
       "mower_status": {
-        "name": "Status kosiarki"
+        "name": "Status kosiarki",
+        "state": {
+          "standby": "Gotowy",
+          "paused": "Wstrzymany",
+          "charging": "Ładowanie",
+          "mowing": "Koszenie",
+          "returning_to_dock": "Powrót do stacji",
+          "mapping": "Mapowanie",
+          "positioning": "Pozycjonowanie",
+          "resuming": "Wznawianie",
+          "sleeping": "Uśpiony",
+          "ota_updating": "Aktualizacja",
+          "remote_control": "Zdalne sterowanie",
+          "factory_mode": "Tryb fabryczny",
+          "camera_cleaning": "Czyszczenie kamery",
+          "going_to_target": "W drodze do celu",
+          "shutdown": "Wyłączony",
+          "unknown": "Nieznany"
+        }
       },
       "cutting_height": {
         "name": "Wysokość koszenia"
@@ -50,7 +68,29 @@
         "name": "Poziom naładowania baterii"
       },
       "mode": {
-        "name": "Tryb"
+        "name": "Tryb",
+        "state": {
+          "idle": "Bezczynny",
+          "pause": "Wstrzymany",
+          "charge": "Ładowanie",
+          "sleep": "Uśpiony",
+          "ota": "Aktualizacja",
+          "position": "Pozycjonowanie",
+          "globalmowing": "Koszenie całości",
+          "zonemowing": "Koszenie strefy",
+          "pointmowing": "Koszenie punktowe",
+          "mapping": "Mapowanie",
+          "backtodock": "Powrót do stacji",
+          "resume_point": "Wznawianie",
+          "shutdown": "Wyłączony",
+          "remotectrl": "Zdalne sterowanie",
+          "factory": "Tryb fabryczny",
+          "camera_cleaning": "Czyszczenie kamery",
+          "gototarget": "W drodze do celu",
+          "bordermowing": "Koszenie krawędzi",
+          "regionmowing": "Koszenie obszaru",
+          "nestmowing": "Koszenie przy stacji"
+        }
       },
       "error_code": {
         "name": "Kod błędu"

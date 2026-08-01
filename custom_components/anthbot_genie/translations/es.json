@@ -26,7 +26,25 @@
   "entity": {
     "sensor": {
       "mower_status": {
-        "name": "Estado del cortacésped"
+        "name": "Estado del cortacésped",
+        "state": {
+          "standby": "En espera",
+          "paused": "En pausa",
+          "charging": "Cargando",
+          "mowing": "Cortando",
+          "returning_to_dock": "Volviendo a la base",
+          "mapping": "Mapeando",
+          "positioning": "Posicionando",
+          "resuming": "Reanudando",
+          "sleeping": "En reposo",
+          "ota_updating": "Actualizando",
+          "remote_control": "Control remoto",
+          "factory_mode": "Modo fábrica",
+          "camera_cleaning": "Limpiando cámara",
+          "going_to_target": "Yendo al destino",
+          "shutdown": "Apagado",
+          "unknown": "Desconocido"
+        }
       },
       "cutting_height": {
         "name": "Altura de corte"
@@ -50,7 +68,29 @@
         "name": "Nivel de batería"
       },
       "mode": {
-        "name": "Modo"
+        "name": "Modo",
+        "state": {
+          "idle": "Inactivo",
+          "pause": "En pausa",
+          "charge": "Cargando",
+          "sleep": "En reposo",
+          "ota": "Actualizando",
+          "position": "Posicionando",
+          "globalmowing": "Cortando todo",
+          "zonemowing": "Cortando zona",
+          "pointmowing": "Corte puntual",
+          "mapping": "Mapeando",
+          "backtodock": "Volviendo a la base",
+          "resume_point": "Reanudando",
+          "shutdown": "Apagado",
+          "remotectrl": "Control remoto",
+          "factory": "Modo fábrica",
+          "camera_cleaning": "Limpiando cámara",
+          "gototarget": "Yendo al destino",
+          "bordermowing": "Cortando borde",
+          "regionmowing": "Cortando región",
+          "nestmowing": "Cortando en la base"
+        }
       },
       "error_code": {
         "name": "Código de error"

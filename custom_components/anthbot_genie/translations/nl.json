@@ -26,7 +26,25 @@
   "entity": {
     "sensor": {
       "mower_status": {
-        "name": "Maaierstatus"
+        "name": "Maaierstatus",
+        "state": {
+          "standby": "Stand-by",
+          "paused": "Gepauzeerd",
+          "charging": "Laadt op",
+          "mowing": "Maait",
+          "returning_to_dock": "Terug naar station",
+          "mapping": "Karteert",
+          "positioning": "Positioneert",
+          "resuming": "Hervat",
+          "sleeping": "Slaapt",
+          "ota_updating": "Werkt bij",
+          "remote_control": "Afstandsbediening",
+          "factory_mode": "Fabrieksmodus",
+          "camera_cleaning": "Camera reinigen",
+          "going_to_target": "Naar doel",
+          "shutdown": "Uitgeschakeld",
+          "unknown": "Onbekend"
+        }
       },
       "cutting_height": {
         "name": "Maai hoogte"
@@ -50,7 +68,29 @@
         "name": "Batterijniveau"
       },
       "mode": {
-        "name": "Modus"
+        "name": "Modus",
+        "state": {
+          "idle": "Inactief",
+          "pause": "Gepauzeerd",
+          "charge": "Laadt op",
+          "sleep": "Slaapt",
+          "ota": "Werkt bij",
+          "position": "Positioneert",
+          "globalmowing": "Maait alles",
+          "zonemowing": "Maait zone",
+          "pointmowing": "Puntmaaien",
+          "mapping": "Karteert",
+          "backtodock": "Terug naar station",
+          "resume_point": "Hervat",
+          "shutdown": "Uitgeschakeld",
+          "remotectrl": "Afstandsbediening",
+          "factory": "Fabrieksmodus",
+          "camera_cleaning": "Camera reinigen",
+          "gototarget": "Naar doel",
+          "bordermowing": "Maait rand",
+          "regionmowing": "Maait gebied",
+          "nestmowing": "Maait bij station"
+        }
       },
       "error_code": {
         "name": "Foutcode"
