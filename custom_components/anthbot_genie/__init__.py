@@ -422,8 +422,7 @@ async def _async_register_services(hass: HomeAssistant) -> None:
     if not hass.services.has_service(DOMAIN, SERVICE_START_FULL_MOW):
         hass.services.async_register(
             DOMAIN,
-            SERVICE_SEND_RAW_COMMAND,
-    SERVICE_START_FULL_MOW,
+            SERVICE_START_FULL_MOW,
             _handle_start_full_mow,
             schema=base_schema,
         )
@@ -664,7 +663,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if not hass.data[DOMAIN]:
             for service_name in (
                 SERVICE_SEND_RAW_COMMAND,
-    SERVICE_START_FULL_MOW,
+                SERVICE_START_FULL_MOW,
                 SERVICE_STOP_MOW,
                 SERVICE_RETURN_TO_DOCK,
                 SERVICE_SET_MOW_HEIGHT,
