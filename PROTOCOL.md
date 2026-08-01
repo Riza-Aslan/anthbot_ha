@@ -151,6 +151,38 @@ Turning nest mowing on/off is *not* part of this command — it is
 
 There is no `set_mow_params` command; that name does not exist in the app.
 
+## `curpath` — the travelled path
+
+The property shadow's `curpath.value` is base64. It decodes to a 22-byte
+header followed by 6-byte records:
+
+```
+struct { int16 x; int16 y; uint16 flags; }   // little endian, x/y in cm
+```
+
+Decoded from a real M5 (`curpath` of 94 bytes → 12 points):
+
+```
+  x(cm)   y(cm)   flags
+   -102     -23   0x0205
+   -102     -22   0x0205
+    -91     -23   0x0205
+    ...
+     -3     -17   0x0205
+```
+
+The coordinates are relative to the map origin, in centimetres, and form a
+continuous track. `flags` was constant across every sample seen so far, so its
+meaning is unknown.
+
+This is enough to plot where the mower has driven, but **not** enough to draw a
+map: the lawn boundary is not in the shadow. It lives in a separate binary file
+(`multi_maps.map_list[].map_file_name`, e.g. `map_<sn>_0`) fetched through
+`/api/v1/device/v2/presigned_url`, whose format has not been analysed. The
+app's `downloadMapFile` / `useMap` handle it.
+
+`region_area.points` holds coordinates in the same cm units.
+
 ## Full command vocabulary
 
 Device commands found in the app (MQTT protocol verbs such as `publish`,

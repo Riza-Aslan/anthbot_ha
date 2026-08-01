@@ -21,6 +21,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from homeassistant.exceptions import HomeAssistantError
+
+
+class AnthbotUnsupportedSettingError(HomeAssistantError):
+    """Raised when a mower cannot be asked to change a setting this way.
+
+    A HomeAssistantError (rather than ValueError) so Home Assistant shows the
+    user a message instead of an unhandled-exception traceback.
+    """
+
+
 # Keys carried by the device_config property object and the device_config
 # command, in the order the app's useDeviceConfig hook reads them.
 DEVICE_CONFIG_KEYS: tuple[str, ...] = (
@@ -161,8 +172,15 @@ def has_device_config_value(state: dict[str, Any], key: str) -> bool:
 
 
 def param_set_value(state: dict[str, Any], key: str) -> Any:
-    """Read a param_set key."""
-    return param_set(state).get(key)
+    """Read a param_set key, falling back to the legacy top-level key.
+
+    Genie-era firmware reports some of these (notably ``cutter_height``) at the
+    top level of the property shadow as well as inside ``param_set``.
+    """
+    params = param_set(state)
+    if key in params:
+        return params[key]
+    return state.get(key)
 
 
 @dataclass(frozen=True, slots=True)
@@ -198,7 +216,9 @@ def _legacy_command(key: str, value: int, state: dict[str, Any]) -> Command:
         return Command("perception_obstacle_ctl", {"switch": value})
     if key == "pobctl_level":
         return Command("perception_obstacle_ctl", {"level": value})
-    raise ValueError(f"No legacy command for device_config key {key!r}")
+    raise AnthbotUnsupportedSettingError(
+        f"This mower has no command for the {key!r} setting"
+    )
 
 
 def build_device_config_command(
@@ -211,19 +231,19 @@ def build_device_config_command(
     per-setting command.
     """
     if not changes:
-        raise ValueError("No settings to change")
+        raise AnthbotUnsupportedSettingError("No settings to change")
 
     for key in changes:
         if key not in DEVICE_CONFIG_KEYS:
-            raise ValueError(f"Unknown device_config key {key!r}")
+            raise AnthbotUnsupportedSettingError(f"Unknown device_config key {key!r}")
 
     if supports_device_config(state):
         return Command("device_config", dict(changes))
 
     if len(changes) != 1:
         # The legacy path has no batch command; callers must change one at a time.
-        raise ValueError(
-            "Legacy devices accept only one setting change per command, got: "
+        raise AnthbotUnsupportedSettingError(
+            "This mower accepts only one setting change per command, got: "
             + ", ".join(sorted(changes))
         )
     key, value = next(iter(changes.items()))
@@ -233,10 +253,10 @@ def build_device_config_command(
 def build_param_set_command(**changes: int) -> Command:
     """Build a partial ``param_set`` update."""
     if not changes:
-        raise ValueError("No parameters to change")
+        raise AnthbotUnsupportedSettingError("No parameters to change")
     for key in changes:
         if key not in PARAM_SET_KEYS:
-            raise ValueError(f"Unknown param_set key {key!r}")
+            raise AnthbotUnsupportedSettingError(f"Unknown param_set key {key!r}")
     return Command("param_set", dict(changes))
 
 
@@ -248,8 +268,8 @@ def build_nest_param_set_command(**changes: int) -> Command:
     """
     allowed = {"cutter_height", "mow_count", "pobctl_switch", "pobctl_level"}
     if not changes:
-        raise ValueError("No nest parameters to change")
+        raise AnthbotUnsupportedSettingError("No nest parameters to change")
     for key in changes:
         if key not in allowed:
-            raise ValueError(f"Unknown nest_param_set key {key!r}")
+            raise AnthbotUnsupportedSettingError(f"Unknown nest_param_set key {key!r}")
     return Command("nest_param_set", dict(changes))
