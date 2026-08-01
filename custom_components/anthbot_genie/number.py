@@ -194,12 +194,14 @@ class AnthbotNumberEntity(AnthbotSettingEntity, NumberEntity):
     @property
     def available(self) -> bool:
         """Return whether this mower reports the setting."""
-        return super().available and self.entity_description.supported_fn(self.state)
+        return super().available and self.entity_description.supported_fn(
+            self.mower_state
+        )
 
     @property
     def native_value(self) -> float | None:
         """Return the current setting value."""
-        value = self.entity_description.value_fn(self.state)
+        value = self.entity_description.value_fn(self.mower_state)
         return None if value is None else float(value)
 
     async def async_set_native_value(self, value: float) -> None:
@@ -210,4 +212,4 @@ class AnthbotNumberEntity(AnthbotSettingEntity, NumberEntity):
         # Snap to the device's own grid so we never send a value it will reject.
         snapped = int(round((value - minimum) / step)) * step + minimum
         snapped = int(min(max(snapped, minimum), description.native_max_value))
-        await self.async_apply(description.command_fn(self.state, snapped))
+        await self.async_apply(description.command_fn(self.mower_state, snapped))

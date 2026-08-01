@@ -39,8 +39,13 @@ class AnthbotSettingEntity(CoordinatorEntity[AnthbotGenieDataUpdateCoordinator])
         )
 
     @property
-    def state(self) -> dict:
-        """Return the mower's latest reported state."""
+    def mower_state(self) -> dict:
+        """Return the mower's latest reported shadow state.
+
+        Deliberately *not* called ``state``: that name belongs to
+        ``Entity.state`` and overriding it hands Home Assistant the whole
+        shadow dict as the entity's state string.
+        """
         return self.coordinator.reported_state
 
     async def async_apply(self, command: Command) -> None:
