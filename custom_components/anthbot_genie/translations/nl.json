@@ -216,6 +216,11 @@
       "diagnostics_logging_enabled": {
         "name": "Diagnostische logging"
       }
+    },
+    "image": {
+      "map": {
+        "name": "Kaart"
+      }
     }
   }
 }

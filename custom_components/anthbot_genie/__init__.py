@@ -50,6 +50,7 @@ PLATFORMS = [
     "sensor",
     "binary_sensor",
     "button",
+    "image",
     "lawn_mower",
     "number",
     "select",

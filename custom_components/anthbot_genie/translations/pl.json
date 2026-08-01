@@ -216,6 +216,11 @@
           "high": "Wysoki"
         }
       }
+    },
+    "image": {
+      "map": {
+        "name": "Mapa"
+      }
     }
   }
 }

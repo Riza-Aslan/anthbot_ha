@@ -151,6 +151,65 @@ Turning nest mowing on/off is *not* part of this command — it is
 
 There is no `set_mow_params` command; that name does not exist in the app.
 
+## The map archive
+
+The lawn geometry is **not** in the shadow. It is a gzipped tar fetched from
+`/api/v1/device/v2/presigned_url` with `category=device`, `sub_category=map`
+and the filename the app builds in `genZipFilename()`:
+
+```
+map_manager_<sn>.tar.gz
+```
+
+Note this is *not* `multi_maps.map_list[].map_file_name` — requesting that
+returns `NoSuchKey` from S3. The archive members are:
+
+| Member | Contents |
+| --- | --- |
+| `iot_map.bin` | the mowable lawn, as polygons |
+| `iot_bridge.bin` | connections between separate lawn areas |
+| `area_setting.json` | zones, no-go areas, ride-on paths |
+
+`area_setting.json` is plain JSON with `custom_areas`, `forbid_areas`,
+`region_areas`, `ridable_areas`, `dump_grass_areas` and `remote_forbid_areas`.
+Polygon entries carry `vertexs` as `[[x, y], ...]`; `region_areas` carry a
+single `x`/`y` seed point.
+
+### Binary layout
+
+Both `.bin` files start with a header whose first byte is its own length:
+
+```
+offset  type      iot_map.bin                  iot_bridge.bin
+0       uint8     header size (35)             header size (15)
+1..2    uint8[2]  version (1, 2)               version (1, 2)
+3..4    uint16    total point count            total point count
+5..6    uint16    file size                    file size
+7..10   uint32    grid width
+11..14  uint32    grid height
+15..18  float32   resolution, m per cell
+19..22  float32   origin x, metres
+23..26  float32   origin y, metres
+27..34  uint64    map_id                       (at offset 7)
+```
+
+The body is a sequence of rings. `iot_map.bin` uses
+
+```
+uint32 count, then count * (int32 x, int32 y)
+```
+
+and `iot_bridge.bin` prefixes each ring with a one-byte segment id.
+
+**Coordinates are little-endian int32 millimetres**, y pointing up.
+
+### How the units were confirmed
+
+Decoded from a real M5: two rings of 13 points each. Taking the values as
+millimetres, their shoelace areas are 14.4 m² and 14.3 m² — 28.8 m² together,
+against the 29 m² the shadow reports in `map.map_area`. Each ring closes to
+within 50 mm of its start. Centimetres would have given 2880 m².
+
 ## `curpath` — the travelled path
 
 The property shadow's `curpath.value` is base64. It decodes to a 22-byte

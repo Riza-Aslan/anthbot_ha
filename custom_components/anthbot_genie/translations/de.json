@@ -216,6 +216,11 @@
       "diagnostics_logging_enabled": {
         "name": "Diagnoseprotokollierung"
       }
+    },
+    "image": {
+      "map": {
+        "name": "Karte"
+      }
     }
   }
 }
