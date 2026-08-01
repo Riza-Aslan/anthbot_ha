@@ -29,6 +29,7 @@ SERVICE_SET_VOICE_VOLUME = "set_voice_volume"
 SERVICE_SET_CUSTOM_MOWING_DIRECTION = "set_custom_mowing_direction"
 SERVICE_START_ZONE_MOW = "start_zone_mow"
 SERVICE_START_AUTO_ZONE_MOW = "start_auto_zone_mow"
+SERVICE_SEND_RAW_COMMAND = "send_raw_command"
 
 ATTR_SERIAL_NUMBER = "serial_number"
 ATTR_MOW_HEIGHT = "mow_height"
