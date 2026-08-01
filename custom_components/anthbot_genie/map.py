@@ -194,16 +194,30 @@ def _polygons(area: dict[str, Any], key: str) -> list[list[Point]]:
     return result
 
 
-# Colours chosen to stay legible on both light and dark dashboards.
-_BACKGROUND = "#1c2521"
-_LAWN_FILL = "#4c8c4a"
-_LAWN_EDGE = "#8fd18c"
-_ZONE_EDGE = "#ffd54f"
-_FORBID_FILL = "#e5737355"
-_FORBID_EDGE = "#e57373"
-_BRIDGE = "#64b5f6"
-_TRACK = "#ffffff66"
-_MOWER = "#ff7043"
+# Palette sampled from the Anthbot app so the map looks familiar next to it.
+# Carried in a <style> block rather than per-element attributes so the dark
+# variant can be a media query — which browsers honour even for an SVG loaded
+# through <img>, as Home Assistant does.
+_STYLE = """<style>
+  .bg     { fill: #ecedf4 }
+  .lawn   { fill: #9da4fc; stroke: #858cf5; stroke-width: 30; stroke-linejoin: round }
+  .zone   { fill: #f0afb8; fill-opacity: .45; stroke: #e2808d; stroke-width: 35;
+            stroke-dasharray: 170 100; stroke-linecap: round }
+  .forbid { fill: #ff8a8a; fill-opacity: .35; stroke: #e05c5c; stroke-width: 35 }
+  .bridge { fill: none; stroke: #b9bdcb; stroke-width: 70; stroke-linecap: round;
+            stroke-dasharray: 30 120 }
+  .track  { fill: none; stroke: #ffffff; stroke-opacity: .75; stroke-width: 60;
+            stroke-linecap: round; stroke-linejoin: round }
+  .mower  { fill: #ffffff; stroke: #2a2f7d; stroke-width: 55 }
+  .mowerd { fill: #2a2f7d }
+  @media (prefers-color-scheme: dark) {
+    .bg     { fill: #191b2a }
+    .lawn   { fill: #6f76d8; stroke: #8f96ee }
+    .bridge { stroke: #5b6070 }
+    .mower  { fill: #ffffff; stroke: #12142b }
+    .mowerd { fill: #12142b }
+  }
+</style>"""
 
 
 def render_svg(
@@ -245,8 +259,8 @@ def render_svg(
     if not everything:
         return (
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" '
-            f'width="{width}"><rect width="100" height="100" '
-            f'fill="{_BACKGROUND}"/></svg>'
+            f'width="{width}">{_STYLE}'
+            '<rect class="bg" width="100" height="100"/></svg>'
         )
 
     xs = [p[0] for p in everything]
@@ -274,38 +288,26 @@ def render_svg(
     parts = [
         '<svg xmlns="http://www.w3.org/2000/svg" '
         f'viewBox="0 0 {box_w} {box_h}" width="{width}" height="{height}">',
-        f'<rect width="{box_w}" height="{box_h}" fill="{_BACKGROUND}"/>',
+        _STYLE,
+        f'<rect class="bg" width="{box_w}" height="{box_h}"/>',
     ]
     for points in mower_map.lawn:
-        parts.append(
-            f'<polygon points="{ring(points)}" fill="{_LAWN_FILL}" '
-            f'stroke="{_LAWN_EDGE}" stroke-width="40"/>'
-        )
+        parts.append(f'<polygon class="lawn" points="{ring(points)}"/>')
     for points in mower_map.bridges:
-        parts.append(
-            f'<polyline points="{ring(points)}" fill="none" stroke="{_BRIDGE}" '
-            'stroke-width="60" stroke-linecap="round"/>'
-        )
+        parts.append(f'<polyline class="bridge" points="{ring(points)}"/>')
     for points in forbidden:
-        parts.append(
-            f'<polygon points="{ring(points)}" fill="{_FORBID_FILL}" '
-            f'stroke="{_FORBID_EDGE}" stroke-width="40"/>'
-        )
+        parts.append(f'<polygon class="forbid" points="{ring(points)}"/>')
     for points in zones:
-        parts.append(
-            f'<polygon points="{ring(points)}" fill="none" stroke="{_ZONE_EDGE}" '
-            'stroke-width="45" stroke-dasharray="150,90"/>'
-        )
+        parts.append(f'<polygon class="zone" points="{ring(points)}"/>')
     if path and len(path) >= 2:
-        parts.append(
-            f'<polyline points="{ring(path)}" fill="none" stroke="{_TRACK}" '
-            'stroke-width="70" stroke-linecap="round" stroke-linejoin="round"/>'
-        )
+        parts.append(f'<polyline class="track" points="{ring(path)}"/>')
     if position:
         cx, cy = position[0] - min_x, max_y - position[1]
+        # Rounded square with a dot, echoing the app's mower marker.
         parts.append(
-            f'<circle cx="{cx:.0f}" cy="{cy:.0f}" r="150" fill="{_MOWER}" '
-            'stroke="#ffffff" stroke-width="45"/>'
+            f'<rect class="mower" x="{cx - 190:.0f}" y="{cy - 190:.0f}" '
+            'width="380" height="380" rx="130"/>'
+            f'<circle class="mowerd" cx="{cx:.0f}" cy="{cy:.0f}" r="80"/>'
         )
     parts.append("</svg>")
     return "\n".join(parts)
