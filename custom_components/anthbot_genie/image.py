@@ -11,7 +11,7 @@ from homeassistant.util import dt as dt_util
 from .const import DOMAIN
 from .coordinator import AnthbotGenieDataUpdateCoordinator
 from .entity import AnthbotSettingEntity
-from .map import render_svg
+from .map import parse_curpath, parse_position, render_svg
 
 MAP_DESCRIPTION = ImageEntityDescription(
     key="map",
@@ -53,17 +53,26 @@ class AnthbotMapImage(AnthbotSettingEntity, ImageEntity):
         ImageEntity.__init__(self, hass)
         AnthbotSettingEntity.__init__(self, coordinator, MAP_DESCRIPTION)
         self._cached: bytes | None = None
-        self._cached_for: int | None = None
+        self._cached_key: tuple | None = None
 
     @property
     def available(self) -> bool:
         """Return whether a map has been fetched."""
         return super().available and not self.coordinator.mower_map.is_empty
 
+    def _render_key(self) -> tuple:
+        """Return what the drawing depends on: the map, the mower and its track."""
+        state = self.mower_state
+        curpath = state.get("curpath")
+        return (
+            self.coordinator.mower_map.map_id,
+            parse_position(state),
+            curpath.get("value") if isinstance(curpath, dict) else None,
+        )
+
     def _handle_coordinator_update(self) -> None:
-        """Redraw only when the mower reports a different map."""
-        map_id = self.coordinator.mower_map.map_id
-        if map_id != self._cached_for:
+        """Redraw when the map, the position or the track changed."""
+        if self._render_key() != self._cached_key:
             self._cached = None
             self._attr_image_last_updated = dt_util.utcnow()
         super()._handle_coordinator_update()
@@ -73,7 +82,16 @@ class AnthbotMapImage(AnthbotSettingEntity, ImageEntity):
         mower_map = self.coordinator.mower_map
         if mower_map.is_empty:
             return None
-        if self._cached is None or self._cached_for != mower_map.map_id:
-            self._cached = render_svg(mower_map).encode("utf-8")
-            self._cached_for = mower_map.map_id
+        key = self._render_key()
+        if self._cached is None or self._cached_key != key:
+            state = self.mower_state
+            curpath = state.get("curpath")
+            self._cached = render_svg(
+                mower_map,
+                path=parse_curpath(
+                    curpath.get("value") if isinstance(curpath, dict) else None
+                ),
+                position=parse_position(state),
+            ).encode("utf-8")
+            self._cached_key = key
         return self._cached

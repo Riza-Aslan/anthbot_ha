@@ -230,17 +230,22 @@ Decoded from a real M5 (`curpath` of 94 bytes → 12 points):
      -3     -17   0x0205
 ```
 
-The coordinates are relative to the map origin, in centimetres, and form a
-continuous track. `flags` was constant across every sample seen so far, so its
-meaning is unknown.
+`flags` was constant across every sample seen so far, so its meaning is
+unknown.
 
-This is enough to plot where the mower has driven, but **not** enough to draw a
-map: the lawn boundary is not in the shadow. It lives in a separate binary file
-(`multi_maps.map_list[].map_file_name`, e.g. `map_<sn>_0`) fetched through
-`/api/v1/device/v2/presigned_url`, whose format has not been analysed. The
-app's `downloadMapFile` / `useMap` handle it.
+### Units
 
-`region_area.points` holds coordinates in the same cm units.
+`curpath` is in **centimetres**, while the map archive is in millimetres — a
+factor of 10 between them. Established by transforming the path by 1, 10 and
+100 and testing each result against the lawn polygons: only the ×10 reading
+puts the track inside the lawn (8 of 12 points), the others land nowhere near
+it.
+
+The mower's own position is `anti_loss_pose.pose2d`, `{x, y}` in **metres**.
+Both readings agree: with the mower docked, the path ends at (−30, −170) mm
+and the pose is (100, −137) mm — both within 0.2 m of the map origin.
+
+`region_area.points` uses the same centimetre units as `curpath`.
 
 ## Full command vocabulary
 

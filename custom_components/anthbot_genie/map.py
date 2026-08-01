@@ -13,6 +13,8 @@ Both binaries share a header and store coordinates as little-endian int32
 
 from __future__ import annotations
 
+import base64
+import binascii
 from dataclasses import dataclass, field
 import io
 import json
@@ -127,6 +129,49 @@ def parse_archive(raw: bytes) -> MowerMap:
     )
 
 
+# curpath is a 22-byte header followed by 6-byte records: int16 x, int16 y and
+# a 2-byte field that has been constant in every sample. Its coordinates are
+# centimetres while the map is millimetres — established by transforming the
+# path both ways and checking which lands inside the lawn polygons.
+_CURPATH_HEADER = 22
+_CURPATH_RECORD = 6
+CURPATH_TO_MM = 10
+# pose2d is metres.
+POSE_TO_MM = 1000
+
+
+def parse_curpath(value: str | None) -> list[Point]:
+    """Decode the shadow's base64 ``curpath`` into map millimetres."""
+    if not isinstance(value, str) or not value:
+        return []
+    try:
+        raw = base64.b64decode(value, validate=True)
+    except (binascii.Error, ValueError):
+        return []
+    if len(raw) <= _CURPATH_HEADER:
+        return []
+    body = raw[_CURPATH_HEADER:]
+    points: list[Point] = []
+    for offset in range(0, len(body) - _CURPATH_RECORD + 1, _CURPATH_RECORD):
+        x, y = struct.unpack_from("<hh", body, offset)
+        points.append((x * CURPATH_TO_MM, y * CURPATH_TO_MM))
+    return points
+
+
+def parse_position(state: dict[str, Any]) -> Point | None:
+    """Return the mower's position in map millimetres, if it reports one."""
+    pose = state.get("anti_loss_pose")
+    if not isinstance(pose, dict):
+        return None
+    pose2d = pose.get("pose2d")
+    if not isinstance(pose2d, dict):
+        return None
+    x, y = pose2d.get("x"), pose2d.get("y")
+    if not isinstance(x, (int, float)) or not isinstance(y, (int, float)):
+        return None
+    return (round(x * POSE_TO_MM), round(y * POSE_TO_MM))
+
+
 def _polygons(area: dict[str, Any], key: str) -> list[list[Point]]:
     """Return polygons from an area_setting.json list, skipping empty ones."""
     entries = area.get(key)
@@ -157,9 +202,18 @@ _ZONE_EDGE = "#ffd54f"
 _FORBID_FILL = "#e5737355"
 _FORBID_EDGE = "#e57373"
 _BRIDGE = "#64b5f6"
+_TRACK = "#ffffff66"
+_MOWER = "#ff7043"
 
 
-def render_svg(mower_map: MowerMap, *, width: int = 900, padding: int = 300) -> str:
+def render_svg(
+    mower_map: MowerMap,
+    *,
+    path: list[Point] | None = None,
+    position: Point | None = None,
+    width: int = 900,
+    padding: int = 300,
+) -> str:
     """Render the map as an SVG document.
 
     Device coordinates have y pointing up; SVG has it pointing down, so y is
@@ -171,11 +225,15 @@ def render_svg(mower_map: MowerMap, *, width: int = 900, padding: int = 300) -> 
         area, "remote_forbid_areas"
     )
 
+    # The mower and its track are included in the extent so it stays visible
+    # even when it drives outside the mapped lawn.
     everything = [
         *(p for ring in mower_map.lawn for p in ring),
         *(p for seg in mower_map.bridges for p in seg),
         *(p for ring in zones for p in ring),
         *(p for ring in forbidden for p in ring),
+        *(path or []),
+        *([position] if position else []),
     ]
     if not everything:
         return (
@@ -221,6 +279,17 @@ def render_svg(mower_map: MowerMap, *, width: int = 900, padding: int = 300) -> 
         parts.append(
             f'<polygon points="{ring(points)}" fill="none" stroke="{_ZONE_EDGE}" '
             'stroke-width="45" stroke-dasharray="150,90"/>'
+        )
+    if path and len(path) >= 2:
+        parts.append(
+            f'<polyline points="{ring(path)}" fill="none" stroke="{_TRACK}" '
+            'stroke-width="70" stroke-linecap="round" stroke-linejoin="round"/>'
+        )
+    if position:
+        cx, cy = position[0] - min_x, max_y - position[1]
+        parts.append(
+            f'<circle cx="{cx:.0f}" cy="{cy:.0f}" r="150" fill="{_MOWER}" '
+            'stroke="#ffffff" stroke-width="45"/>'
         )
     parts.append("</svg>")
     return "\n".join(parts)
